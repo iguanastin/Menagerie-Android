@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_text_hint">Search for tags</string>
+    <string name="image_preview_content_desc">preview of image</string>
+    <string name="prompt_ip">IP Address</string>
+    <string name="prompt_port">Port</string>
+    <string name="action_connect">Connect</string>
+</resources>
