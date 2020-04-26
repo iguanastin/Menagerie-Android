@@ -1,13 +1,11 @@
 package com.example.menagerie
 
-import android.content.Context
 import android.content.DialogInterface
 import android.os.Bundle
 import android.view.View
-import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -19,25 +17,35 @@ import java.io.IOException
 import java.net.URLEncoder
 
 
-class MainActivity : AppCompatActivity() {
+class SearchActivity : AppCompatActivity() {
 
     lateinit var grid: RecyclerView
     lateinit var gridProgress: ProgressBar
     lateinit var searchText: EditText
     lateinit var searchButton: Button
+    lateinit var moreSearchLayout: LinearLayout
+
+    private lateinit var client: OkHttpClient
+    private lateinit var cache: Cache
 
     lateinit var address: String
+    lateinit var thumbnailAdapter: ThumbnailAdapter
     val data: MutableList<String> = mutableListOf()
-    val thumbnailAdapter = ThumbnailAdapter(this@MainActivity, data)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_search)
 
-        supportActionBar?.hide()
+        address = "http://" + intent.getCharSequenceExtra(ADDRESS)
+        cache = Cache(applicationContext.cacheDir, 1024*1024*100)
+        client = OkHttpClient.Builder().cache(cache).build()
+        thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client, data)
 
         initViews()
         initListeners()
+
+        search()
     }
 
     override fun finish() {
@@ -51,19 +59,15 @@ class MainActivity : AppCompatActivity() {
         gridProgress = findViewById(R.id.gridProgress)
         searchText = findViewById(R.id.searchText)
         searchButton = findViewById(R.id.searchButton)
+        moreSearchLayout = findViewById(R.id.moreSearchLayout)
+
+        supportActionBar?.hide()
 
         grid.apply {
             layoutManager =
                 GridLayoutManager(context, context.resources.getInteger(R.integer.grid_span))
             adapter = thumbnailAdapter
         }
-
-        address =
-            "http://" + intent.getCharSequenceExtra(IP_ADDRESS) + ":" + intent.getCharSequenceExtra(
-                PORT
-            )
-
-        search()
     }
 
     private fun initListeners() {
@@ -74,9 +78,12 @@ class MainActivity : AppCompatActivity() {
                     if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) View.VISIBLE else View.GONE
             }
         })
-        searchText.onSubmit { searchButton.performClick() }
-        searchText.setOnFocusChangeListener { view: View, b: Boolean ->
-            
+        searchText.onSubmit {
+            searchButton.performClick()
+        }
+
+        grid.onGlobalLayout {
+            // TODO set span of grid and element size nicely
         }
     }
 
@@ -96,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         if (descending) url += "&desc"
         if (ungroup) url += "&ungroup"
 
-        OkHttpClient().newCall(Request.Builder().url(url).build())
+        client.newCall(Request.Builder().url(url).build())
             .enqueue(object : Callback {
                 override fun onResponse(call: Call, response: Response) {
                     val root = JSONObject(response.body!!.string())
@@ -120,7 +127,7 @@ class MainActivity : AppCompatActivity() {
                     runOnUiThread {
                         AlertDialog.Builder(grid.context).setTitle("Error")
                             .setMessage("Failed to connect to: $address")
-                            .setNeutralButton("Ok") { _: DialogInterface?, _: Int -> this@MainActivity.finish() }
+                            .setNeutralButton("Ok") { _: DialogInterface?, _: Int -> this@SearchActivity.finish() }
                             .create().show()
                     }
                 }
@@ -128,6 +135,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun onSearchClick(view: View) {
+        hideKeyboard(view)
         search(searchText.text.toString())
     }
 
@@ -136,22 +144,6 @@ class MainActivity : AppCompatActivity() {
             grid.smoothScrollToPosition(0)
         else
             grid.scrollToPosition(0)
-    }
-
-    fun EditText.onSubmit(func: () -> Unit) {
-        setOnEditorActionListener { v, actionId, _ ->
-
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                (v.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
-                    v.windowToken,
-                    0
-                ) // Hide keyboard
-                func()
-            }
-
-            true
-
-        }
     }
 
 }

@@ -2,7 +2,9 @@
     <string name="app_name" translatable="false">Menagerie</string>
     <string name="search_text_hint">Search for tags</string>
     <string name="image_preview_content_desc">preview of image</string>
-    <string name="prompt_ip">IP Address</string>
-    <string name="prompt_port">Port</string>
+    <string name="prompt_address">Address</string>
     <string name="action_connect">Connect</string>
+    <string name="menagerie_icon">menagerie icon</string>
+    <string name="cd_item_thumbnail">item thumbnail</string>
+    <string name="cd_preview_of_item_image">preview of item image</string>
 </resources>
