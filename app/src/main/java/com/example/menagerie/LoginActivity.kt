@@ -18,6 +18,8 @@ class LoginActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
+        supportActionBar?.hide()
+
         findViewById<EditText>(R.id.addressText).onSubmit { findViewById<Button>(R.id.connectButton).performClick() }
     }
 

@@ -70,23 +70,25 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
                 }
 
                 override fun onResponse(call: Call, response: Response) {
-                    val bytes = response.body?.byteStream()
-                    if (bytes != null) {
-                        try {
-                            val d = BitmapDrawable.createFromStream(bytes, null)
-                            if (d != null) cache[data[position]] = d
-                        } catch (e: ImageDecoder.DecodeException) {
-                            e.printStackTrace()
-                        }
-                    }
-                    activity.runOnUiThread {
-                        if (response.code == 200) {
+                    if (response.code == 200) {
+                        val bytes = response.body?.byteStream()
+                        if (bytes != null) {
                             try {
-                                holder.imageView.setImageDrawable(cache[data[position]])
+                                val d = BitmapDrawable.createFromStream(bytes, null)
+                                if (d != null) cache[data[position]] = d
                             } catch (e: ImageDecoder.DecodeException) {
-                                cache.remove(data[position])
-                                holder.imageView.setImageDrawable(null)
                                 e.printStackTrace()
+                            }
+                        }
+                        activity.runOnUiThread {
+                            if (response.code == 200) {
+                                try {
+                                    holder.imageView.setImageDrawable(cache[data[position]])
+                                } catch (e: ImageDecoder.DecodeException) {
+                                    cache.remove(data[position])
+                                    holder.imageView.setImageDrawable(null)
+                                    e.printStackTrace()
+                                }
                             }
                         }
                     }
