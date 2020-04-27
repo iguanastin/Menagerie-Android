@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import java.util.regex.Pattern
@@ -19,6 +20,11 @@ class LoginActivity : AppCompatActivity() {
         setContentView(R.layout.activity_login)
 
         supportActionBar?.hide()
+
+        findViewById<ImageView>(R.id.titleImage).setOnLongClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+            true
+        }
 
         findViewById<EditText>(R.id.addressText).onSubmit { findViewById<Button>(R.id.connectButton).performClick() }
     }
