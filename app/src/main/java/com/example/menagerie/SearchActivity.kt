@@ -4,24 +4,30 @@ import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
+import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.view.View
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.net.toFile
+import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import org.json.JSONObject
+import java.io.File
 import java.io.IOException
 import java.net.URLEncoder
-import okhttp3.RequestBody.Companion.asRequestBody
-import java.io.File
 
 
 class SearchActivity : AppCompatActivity() {
@@ -48,7 +54,12 @@ class SearchActivity : AppCompatActivity() {
         setContentView(R.layout.activity_search)
 
         address = "http://" + intent.getCharSequenceExtra(ADDRESS)
-        cache = Cache(applicationContext.cacheDir, 1024 * 1024 * 100)
+        cache = Cache(
+            applicationContext.cacheDir,
+            1024 * 1024 * PreferenceManager.getDefaultSharedPreferences(this)
+                .getInt("cache-size", 128)
+                .toLong()
+        )
         client = OkHttpClient.Builder().cache(cache).build()
         thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client, data)
 
@@ -102,7 +113,7 @@ class SearchActivity : AppCompatActivity() {
                         Manifest.permission.READ_EXTERNAL_STORAGE
                     )
                 ) {
-                    AlertDialog.Builder(grid.context)
+                    AlertDialog.Builder(this)
                         .setTitle("Storage permissions required for this operation")
                         .setMessage("In order to upload files, this app must be granted permission to read external storage")
                         .setNeutralButton("Ok") { _, _ ->
@@ -131,13 +142,6 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
-    private fun userPickFileForUpload() {
-        var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
-        chooseFile.type = "*/*"
-        chooseFile = Intent.createChooser(chooseFile, "Choose a file")
-        startActivityForResult(chooseFile, pickFileResultCode)
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -153,6 +157,13 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    private fun userPickFileForUpload() {
+        var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
+        chooseFile.type = "*/*"
+        chooseFile = Intent.createChooser(chooseFile, "Choose a file")
+        startActivityForResult(chooseFile, pickFileResultCode)
+    }
+
     /**
      * Utility listener used for user file choosing
      *
@@ -166,11 +177,41 @@ class SearchActivity : AppCompatActivity() {
         if (requestCode == pickFileResultCode) {
             if (resultCode == -1) { // ??? Magic number
                 if (data != null) {
-                    uploadFile(data.data!!.toFile()) // TODO toFile doesn't work because android documents bullshit
+                    println(MediaStore.getDocumentUri(this, data.data))
+
+                    val path = data.data!!.toPath()
+                    println(path)
+
+                    uploadFile(File(path)) // TODO toFile doesn't work because android documents bullshit
                     DocumentsContract.getDocumentId(data.data)
                 }
             }
         }
+    }
+
+    private fun Uri.toPath(): String? {
+        when {
+            "content".equals(scheme, ignoreCase = true) -> {
+                val projection = arrayOf("_data")
+                var cursor: Cursor? = null
+                try {
+                    cursor = contentResolver.query(this, projection, null, null, null)!!
+                    val columnIndex: Int = cursor.getColumnIndexOrThrow("_data")
+                    if (cursor.moveToFirst()) {
+                        return cursor.getString(columnIndex)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                } finally {
+                    cursor?.close()
+                }
+            }
+            "file".equals(scheme, ignoreCase = true) -> {
+                return path
+            }
+        }
+
+        return null
     }
 
     /**
@@ -194,7 +235,7 @@ class SearchActivity : AppCompatActivity() {
             override fun onResponse(call: Call, response: Response) {
                 if (response.code != 201) {
                     runOnUiThread {
-                        AlertDialog.Builder(grid.context).setTitle("Unexpected response")
+                        AlertDialog.Builder(this@SearchActivity).setTitle("Unexpected response")
                             .setMessage("While uploading: $filename")
                             .setNeutralButton("Ok") { _, _ -> }
                             .create().show()
@@ -250,7 +291,7 @@ class SearchActivity : AppCompatActivity() {
                 override fun onFailure(call: Call, e: IOException) {
                     e.printStackTrace()
                     runOnUiThread {
-                        AlertDialog.Builder(grid.context).setTitle("Error")
+                        AlertDialog.Builder(this@SearchActivity).setTitle("Error")
                             .setMessage("Failed to connect to: $address")
                             .setNeutralButton("Ok") { _: DialogInterface?, _: Int -> this@SearchActivity.finish() }
                             .create().show()

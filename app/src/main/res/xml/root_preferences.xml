@@ -1,9 +1,16 @@
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <PreferenceCategory app:title="Network">
+    <PreferenceCategory app:title="Menagerie">
         <EditTextPreference
-            app:key="addresses"
-            app:title="Menagerie addresses"
+            app:key="preferred-address"
+            app:title="Preferred address"
+            app:singleLineTitle="true"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="fallback-address"
+            app:title="Fallback address"
+            app:dependency="preferred-address"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
             app:key="key"
@@ -11,16 +18,20 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/sync_header">
-        <SwitchPreferenceCompat
-            app:key="sync"
-            app:title="@string/sync_title" />
-        <SwitchPreferenceCompat
-            app:dependency="sync"
-            app:key="attachment"
-            app:summaryOff="@string/attachment_summary_off"
-            app:summaryOn="@string/attachment_summary_on"
-            app:title="@string/attachment_title" />
+    <PreferenceCategory app:title="Cache">
+        <SeekBarPreference
+            app:key="cache-size"
+            app:title="Cache size (in MB)"
+            app:summary="Requires restart for changes to take effect"
+            app:min="16"
+            app:defaultValue="128"
+            android:max="1024"
+            app:showSeekBarValue="true"
+            app:seekBarIncrement="16" />
+        <Preference
+            app:key="clear-cache"
+            app:title="Clear cache"
+            app:summary="Delete current contents of the cache" />
     </PreferenceCategory>
 
 </PreferenceScreen>

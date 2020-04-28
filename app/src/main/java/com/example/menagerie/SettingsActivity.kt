@@ -1,9 +1,10 @@
 package com.example.menagerie
 
 import android.os.Bundle
-import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
+
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -27,6 +28,17 @@ class SettingsActivity : AppCompatActivity() {
     class SettingsFragment : PreferenceFragmentCompat() {
         override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey)
+
+            val clearCacheButton: Preference = findPreference("clear-cache")!!
+            val summary: String = clearCacheButton.summary.toString()
+            clearCacheButton.summary = summary + " (${byteSizeToString(getDirectorySize(requireContext().cacheDir))})"
+            clearCacheButton.onPreferenceClickListener = Preference.OnPreferenceClickListener {
+                context?.cacheDir?.deleteRecursively()
+
+                clearCacheButton.summary = summary + " (${byteSizeToString(getDirectorySize(requireContext().cacheDir))})"
+
+                true
+            }
         }
     }
 
