@@ -45,7 +45,7 @@
         android:layout_marginBottom="8dp"
         android:isScrollContainer="true"
         android:scrollbars="vertical"
-        app:layout_constraintBottom_toTopOf="@+id/moreSearchLayout"
+        app:layout_constraintBottom_toTopOf="@+id/searchText"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
@@ -79,75 +79,5 @@
         app:layout_constraintEnd_toEndOf="@+id/grid"
         app:layout_constraintStart_toStartOf="@+id/grid"
         app:layout_constraintTop_toTopOf="@+id/grid" />
-
-    <LinearLayout
-        android:id="@+id/moreSearchLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="8dp"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:visibility="gone"
-        app:layout_constraintBottom_toTopOf="@+id/searchText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <LinearLayout
-            android:id="@+id/linearLayout2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <Button
-                android:id="@+id/prevPageButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Prev" />
-
-            <EditText
-                android:id="@+id/pageEditText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ems="3"
-                android:inputType="numberDecimal"
-                android:textAlignment="center"
-                tools:text="0" />
-
-            <Button
-                android:id="@+id/nextPageButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Next" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/linearLayout"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <Switch
-                android:id="@+id/descendingSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:checked="true"
-                android:text="Descending" />
-
-            <Switch
-                android:id="@+id/ungroupSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:paddingLeft="8dp"
-                android:text="Ungroup" />
-
-        </LinearLayout>
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

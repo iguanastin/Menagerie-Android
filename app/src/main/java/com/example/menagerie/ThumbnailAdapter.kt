@@ -17,7 +17,7 @@ import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.min
 
-class ThumbnailAdapter(private val activity: Activity, private val client: OkHttpClient, private val data: List<String>) :
+class ThumbnailAdapter(private val activity: Activity, private val client: OkHttpClient, private val data: List<String>, private val span: Int) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
     class ViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
@@ -32,14 +32,7 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
             .inflate(R.layout.thumbnail_layout, parent, false) as ImageView
         val margin: Int = view.marginLeft + view.marginRight
 
-        val size : Int = min(
-            parent.width / parent.context.resources.getInteger(R.integer.grid_span) - margin,
-            TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                125f,
-                parent.resources.displayMetrics
-            ).toInt()
-        )
+        val size : Int = parent.width / span - margin
         view.layoutParams.width = size
         view.layoutParams.height = size
 
@@ -51,11 +44,11 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
 
         holder.imageView.setImageDrawable(cache[data[position]]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            Toast.makeText(holder.imageView.context, data[position], Toast.LENGTH_SHORT).show()
+            Toast.makeText(it.context, data[position], Toast.LENGTH_SHORT).show()
             // TODO
         }
-        holder.imageView.setOnLongClickListener { v ->
-            Toast.makeText(v.context, data[position], Toast.LENGTH_SHORT).show()
+        holder.imageView.setOnLongClickListener {
+            Toast.makeText(it.context, data[position], Toast.LENGTH_SHORT).show()
             // TODO
             true
         }

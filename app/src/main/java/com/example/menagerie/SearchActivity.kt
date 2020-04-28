@@ -9,10 +9,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.DocumentsContract
 import android.provider.MediaStore
+import android.util.TypedValue
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -34,19 +34,19 @@ class SearchActivity : AppCompatActivity() {
 
     private val permissionsReadStorageForUpload: Int = 1
     private val pickFileResultCode = 1
+    private val preferredThumbnailWidthDP = 125
 
-    lateinit var grid: RecyclerView
-    lateinit var gridProgress: ProgressBar
-    lateinit var searchText: EditText
-    lateinit var searchButton: Button
-    lateinit var moreSearchLayout: LinearLayout
+    private lateinit var grid: RecyclerView
+    private lateinit var gridProgress: ProgressBar
+    private lateinit var searchText: EditText
+    private lateinit var searchButton: Button
 
     private lateinit var client: OkHttpClient
     private lateinit var cache: Cache
 
-    lateinit var address: String
-    lateinit var thumbnailAdapter: ThumbnailAdapter
-    val data: MutableList<String> = mutableListOf()
+    private lateinit var address: String
+    private var thumbnailAdapter: ThumbnailAdapter? = null
+    private val data: MutableList<String> = mutableListOf()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +61,6 @@ class SearchActivity : AppCompatActivity() {
                 .toLong()
         )
         client = OkHttpClient.Builder().cache(cache).build()
-        thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client, data)
 
         initViews()
         initListeners()
@@ -72,7 +71,7 @@ class SearchActivity : AppCompatActivity() {
     override fun finish() {
         super.finish()
 
-        thumbnailAdapter.release()
+        thumbnailAdapter?.release()
     }
 
     private fun initViews() {
@@ -80,15 +79,8 @@ class SearchActivity : AppCompatActivity() {
         gridProgress = findViewById(R.id.gridProgress)
         searchText = findViewById(R.id.searchText)
         searchButton = findViewById(R.id.searchButton)
-        moreSearchLayout = findViewById(R.id.moreSearchLayout)
 
         supportActionBar?.hide()
-
-        grid.apply {
-            layoutManager =
-                GridLayoutManager(context, context.resources.getInteger(R.integer.grid_span))
-            adapter = thumbnailAdapter
-        }
     }
 
     private fun initListeners() {
@@ -138,7 +130,17 @@ class SearchActivity : AppCompatActivity() {
         }
 
         grid.onGlobalLayout {
-            // TODO set span of grid and element size nicely
+            val span = grid.width / TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP,
+                preferredThumbnailWidthDP.toFloat(),
+                resources.displayMetrics
+            ).toInt()
+            thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client, data, span)
+
+            grid.apply {
+                layoutManager = GridLayoutManager(context, span)
+                adapter = thumbnailAdapter
+            }
         }
     }
 
@@ -261,7 +263,7 @@ class SearchActivity : AppCompatActivity() {
     ) {
         data.clear()
         runOnUiThread {
-            thumbnailAdapter.notifyDataSetChanged()
+            thumbnailAdapter?.notifyDataSetChanged()
             gridProgress.visibility = View.VISIBLE
         }
 
@@ -283,7 +285,7 @@ class SearchActivity : AppCompatActivity() {
                     }
 
                     runOnUiThread {
-                        thumbnailAdapter.notifyDataSetChanged()
+                        thumbnailAdapter?.notifyDataSetChanged()
                         gridProgress.visibility = View.GONE
                     }
                 }
