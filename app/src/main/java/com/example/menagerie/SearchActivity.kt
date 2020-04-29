@@ -34,25 +34,83 @@ import java.util.regex.Pattern
 
 class SearchActivity : AppCompatActivity() {
 
+    /**
+     * Unique response id for dynamically requesting storage permissions
+     */
     private val permissionsReadStorageForUpload: Int = 1
-    private val pickFileResultCode = 1
-    private val preferredThumbnailWidthDP = 125
 
+    /**
+     * Unique response id for user selecting a file for upload
+     */
+    private val pickFileResultCode: Int = 2
+
+    /**
+     * Preferred, density independent size of the thumbnails
+     */
+    private val preferredThumbnailSizeDP = 125
+
+
+    /**
+     * Item grid
+     */
     private lateinit var grid: RecyclerView
+
+    /**
+     * Progress spinner for the grid
+     */
     private lateinit var gridProgress: ProgressBar
+
+    /**
+     * Search text field
+     */
     private lateinit var searchText: EditText
+
+    /**
+     * Search submit button
+     */
     private lateinit var searchButton: Button
 
+
+    /**
+     * OkHttpClient that all network calls should be performed on
+     */
     private var client: OkHttpClient? = null
+
+    /**
+     * The OkHttp3 cache used by the client
+     */
     private var cache: Cache? = null
 
+
+    /**
+     * Preferences instance
+     */
     private lateinit var preferences: SharedPreferences
+
+    /**
+     * Hard reference to the preferences listener to avoid garbage collection
+     */
     private lateinit var prefsListener: (SharedPreferences, String) -> Unit
 
+    /**
+     * API address. Should be of the form: "http://[ip]:[port]"
+     */
     private var address: String? = null
+
+    /**
+     * Thumbnail adapter for the grid
+     */
     private var thumbnailAdapter: ThumbnailAdapter? = null
+
+    /**
+     * Dataset from the search that is displayed in the grid
+     */
     private val data: MutableList<String> = mutableListOf()
 
+
+    /**
+     * Called when the activity is created
+     */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
@@ -85,6 +143,9 @@ class SearchActivity : AppCompatActivity() {
         if (address != null) search()
     }
 
+    /**
+     * Initializes the HTTP client from the preferences
+     */
     private fun initializeHTTPClient() {
         cache?.close()
         client = null
@@ -98,6 +159,9 @@ class SearchActivity : AppCompatActivity() {
         client = OkHttpClient.Builder().cache(cache).build()
     }
 
+    /**
+     * Initializes the API address from the preferences
+     */
     private fun initializeAddress(address: String?): String? {
         if (!address.isNullOrEmpty()) {
             if (Pattern.matches("(http://)?[a-zA-Z0-9.\\-]+:[0-9]+", address)) {
@@ -133,9 +197,9 @@ class SearchActivity : AppCompatActivity() {
     }
 
     override fun finish() {
-        super.finish()
-
         thumbnailAdapter?.release()
+
+        super.finish()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -143,6 +207,9 @@ class SearchActivity : AppCompatActivity() {
         return true
     }
 
+    /**
+     * Initializes the views for this activity
+     */
     private fun initializeViews() {
         grid = findViewById(R.id.grid)
         gridProgress = findViewById(R.id.gridProgress)
@@ -152,6 +219,9 @@ class SearchActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.my_toolbar))
     }
 
+    /**
+     * Initializes the listeners for this activity
+     */
     private fun initializeListeners() {
         // Hide or show toTopButton based on scroll position
         grid.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -168,7 +238,7 @@ class SearchActivity : AppCompatActivity() {
         grid.onGlobalLayout {
             val span = grid.width / TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
-                preferredThumbnailWidthDP.toFloat(),
+                preferredThumbnailSizeDP.toFloat(),
                 resources.displayMetrics
             ).toInt()
             thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client!!, data, span)
@@ -180,6 +250,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Called when permissions have been granted/denied
+     */
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -195,6 +268,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Prompts the user for a file to upload
+     */
     private fun userPickFileForUpload() {
         var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
         println(preferences.getString("preferred-address", null))
@@ -222,6 +298,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Called when a menu option is selected
+     */
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.toolbar_settings -> {
@@ -238,6 +317,9 @@ class SearchActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Performs permissions checks and attempts to request a file from the user
+     */
     private fun attemptUploadAction() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED
@@ -362,11 +444,17 @@ class SearchActivity : AppCompatActivity() {
             })
     }
 
-    fun onSearchClick(view: View) {
+    /**
+     * Called when the user submits a search
+     */
+    fun onSearchSubmit(view: View) {
         hideKeyboard(view)
         search(searchText.text.toString())
     }
 
+    /**
+     * Scrolls the grid to the top
+     */
     fun toTopOfGrid(view: View) {
         if ((grid.layoutManager as GridLayoutManager).findLastVisibleItemPosition() < 100)
             grid.smoothScrollToPosition(0)
