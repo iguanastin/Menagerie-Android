@@ -8,13 +8,12 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.webkit.MimeTypeMap
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ProgressBar
+import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -22,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import kotlinx.android.synthetic.main.activity_search.view.*
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -34,78 +34,26 @@ import java.util.regex.Pattern
 
 class SearchActivity : AppCompatActivity() {
 
-    /**
-     * Unique response id for dynamically requesting storage permissions
-     */
     private val permissionsReadStorageForUpload: Int = 1
-
-    /**
-     * Unique response id for user selecting a file for upload
-     */
     private val pickFileResultCode: Int = 2
-
-    /**
-     * Preferred, density independent size of the thumbnails
-     */
     private val preferredThumbnailSizeDP = 125
 
-
-    /**
-     * Item grid
-     */
     private lateinit var grid: RecyclerView
-
-    /**
-     * Progress spinner for the grid
-     */
     private lateinit var gridProgress: ProgressBar
-
-    /**
-     * Search text field
-     */
+    private lateinit var gridErrorText: TextView
+    private lateinit var gridErrorIcon: ImageView
     private lateinit var searchText: EditText
-
-    /**
-     * Search submit button
-     */
     private lateinit var searchButton: Button
 
-
-    /**
-     * OkHttpClient that all network calls should be performed on
-     */
     private var client: OkHttpClient? = null
-
-    /**
-     * The OkHttp3 cache used by the client
-     */
     private var cache: Cache? = null
 
-
-    /**
-     * Preferences instance
-     */
     private lateinit var preferences: SharedPreferences
-
-    /**
-     * Hard reference to the preferences listener to avoid garbage collection
-     */
     private lateinit var prefsListener: (SharedPreferences, String) -> Unit
 
-    /**
-     * API address. Should be of the form: "http://[ip]:[port]"
-     */
     private var address: String? = null
-
-    /**
-     * Thumbnail adapter for the grid
-     */
     private var thumbnailAdapter: ThumbnailAdapter? = null
-
-    /**
-     * Dataset from the search that is displayed in the grid
-     */
-    private val data: MutableList<String> = mutableListOf()
+    private val data: MutableList<JSONObject> = mutableListOf()
 
 
     /**
@@ -213,10 +161,15 @@ class SearchActivity : AppCompatActivity() {
     private fun initializeViews() {
         grid = findViewById(R.id.grid)
         gridProgress = findViewById(R.id.gridProgress)
+        gridErrorText = findViewById(R.id.gridErrorText)
         searchText = findViewById(R.id.searchText)
         searchButton = findViewById(R.id.searchButton)
+        gridErrorIcon = findViewById(R.id.gridErrorIcon)
 
         setSupportActionBar(findViewById(R.id.my_toolbar))
+
+        gridErrorText.gravity = Gravity.CENTER
+        gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
     }
 
     /**
@@ -360,9 +313,13 @@ class SearchActivity : AppCompatActivity() {
         val stream: InputStream = contentResolver.openInputStream(uri)!!
         val mime: String = contentResolver.getType(uri)!!
 
-        val filename: String = URLEncoder.encode(System.currentTimeMillis().toString() + "." + MimeTypeMap.getSingleton().getExtensionFromMimeType(mime), "UTF-8")
+        val filename: String = URLEncoder.encode(
+            System.currentTimeMillis().toString() + "." + MimeTypeMap.getSingleton()
+                .getExtensionFromMimeType(mime), "UTF-8"
+        )
 
-        val bytes: ByteArray = stream.readBytes() // TODO okhttp3 solution is shit because I can't stream the content
+        val bytes: ByteArray =
+            stream.readBytes() // TODO okhttp3 solution is shit because I can't stream the content
 
         client!!.newCall(
             Request.Builder()
@@ -378,10 +335,7 @@ class SearchActivity : AppCompatActivity() {
                 response.use {
                     if (response.code != 201) {
                         runOnUiThread {
-                            AlertDialog.Builder(this@SearchActivity).setTitle("Unexpected response")
-                                .setMessage("While uploading: $filename")
-                                .setNeutralButton("Ok") { _, _ -> }
-                                .create().show()
+                            simpleAlert(this@SearchActivity, "Unexpected response", "While uploading: $filename", "Ok") {}
                         }
                     }
                 }
@@ -407,6 +361,8 @@ class SearchActivity : AppCompatActivity() {
         runOnUiThread {
             thumbnailAdapter?.notifyDataSetChanged()
             gridProgress.visibility = View.VISIBLE
+            gridErrorText.visibility = View.GONE
+            gridErrorIcon.visibility = View.GONE
         }
 
         var url = "$address/search?page=$page&terms=" + URLEncoder.encode(terms, "UTF-8")
@@ -422,23 +378,29 @@ class SearchActivity : AppCompatActivity() {
                     if (count > 0) {
                         val items = root.getJSONArray("items")
                         for (i in 0 until count) {
-                            data.add(address + (items[i] as JSONObject).getString("thumbnail"))
+                            val item: JSONObject = items[i] as JSONObject
+
+                            item.put("thumbnail", address + item.getString("thumbnail"))
+                            item.put("file", address + item.getString("file"))
+
+                            data.add(item)
                         }
                     }
 
                     runOnUiThread {
                         thumbnailAdapter?.notifyDataSetChanged()
                         gridProgress.visibility = View.GONE
+                        gridErrorIcon.visibility = View.GONE
+                        gridErrorText.visibility = View.GONE
                     }
                 }
 
                 override fun onFailure(call: Call, e: IOException) {
                     e.printStackTrace()
                     runOnUiThread {
-                        AlertDialog.Builder(this@SearchActivity).setTitle("Error")
-                            .setMessage("Failed to connect to: $address")
-                            .setNeutralButton("Ok") { _: DialogInterface?, _: Int -> this@SearchActivity.finish() }
-                            .create().show()
+                        gridProgress.visibility = View.GONE
+                        gridErrorText.visibility = View.VISIBLE
+                        gridErrorIcon.visibility = View.VISIBLE
                     }
                 }
             })

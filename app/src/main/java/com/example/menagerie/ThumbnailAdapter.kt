@@ -13,18 +13,19 @@ import androidx.core.view.marginLeft
 import androidx.core.view.marginRight
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.*
+import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.min
 
-class ThumbnailAdapter(private val activity: Activity, private val client: OkHttpClient, private val data: List<String>, private val span: Int) :
+class ThumbnailAdapter(private val activity: Activity, private val client: OkHttpClient, private val data: List<JSONObject>, private val span: Int) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
     class ViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
         var call: Call? = null
     }
 
-    private val cache: MutableMap<String, Drawable> = ConcurrentHashMap()
+    private val cache: MutableMap<Int, Drawable> = ConcurrentHashMap()
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -42,20 +43,20 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.call?.cancel() // Cancel old request if possible
 
-        holder.imageView.setImageDrawable(cache[data[position]]) // Retrieve any known image from cache
+        holder.imageView.setImageDrawable(cache[data[position].getInt("id")]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            Toast.makeText(it.context, data[position], Toast.LENGTH_SHORT).show()
+            Toast.makeText(it.context, "" + data[position].getInt("id"), Toast.LENGTH_SHORT).show()
             // TODO
         }
         holder.imageView.setOnLongClickListener {
-            Toast.makeText(it.context, data[position], Toast.LENGTH_SHORT).show()
+            Toast.makeText(it.context, data[position].getString("thumbnail"), Toast.LENGTH_SHORT).show()
             // TODO
             true
         }
 
         // New call if no cached thumbnail
         if (holder.imageView.drawable == null) {
-            holder.call = client.newCall(Request.Builder().url(data[position]).build())
+            holder.call = client.newCall(Request.Builder().url(data[position].getString("thumbnail")).build())
 
             (holder.call as Call).enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
@@ -68,7 +69,7 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
                         if (bytes != null) {
                             try {
                                 val d = BitmapDrawable.createFromStream(bytes, null)
-                                if (d != null) cache[data[position]] = d
+                                if (d != null) cache[data[position].getInt("id")] = d
                             } catch (e: ImageDecoder.DecodeException) {
                                 e.printStackTrace()
                             }
@@ -76,9 +77,9 @@ class ThumbnailAdapter(private val activity: Activity, private val client: OkHtt
                         activity.runOnUiThread {
                             if (response.code == 200) {
                                 try {
-                                    holder.imageView.setImageDrawable(cache[data[position]])
+                                    holder.imageView.setImageDrawable(cache[data[position].getInt("id")])
                                 } catch (e: ImageDecoder.DecodeException) {
-                                    cache.remove(data[position])
+                                    cache.remove(data[position].getInt("id"))
                                     holder.imageView.setImageDrawable(null)
                                     e.printStackTrace()
                                 }
