@@ -3,14 +3,15 @@ package com.example.menagerie
 import android.Manifest
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
-import android.provider.DocumentsContract
-import android.provider.MediaStore
 import android.util.TypedValue
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
+import android.webkit.MimeTypeMap
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -23,11 +24,12 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.net.URLEncoder
+import java.util.regex.Pattern
 
 
 class SearchActivity : AppCompatActivity() {
@@ -41,31 +43,93 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var searchText: EditText
     private lateinit var searchButton: Button
 
-    private lateinit var client: OkHttpClient
-    private lateinit var cache: Cache
+    private var client: OkHttpClient? = null
+    private var cache: Cache? = null
 
-    private lateinit var address: String
+    private lateinit var preferences: SharedPreferences
+    private lateinit var prefsListener: (SharedPreferences, String) -> Unit
+
+    private var address: String? = null
     private var thumbnailAdapter: ThumbnailAdapter? = null
     private val data: MutableList<String> = mutableListOf()
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_search)
 
-        address = "http://" + intent.getCharSequenceExtra(ADDRESS)
+        preferences = PreferenceManager.getDefaultSharedPreferences(this)
+        prefsListener =
+            { prefs, key ->
+                when (key) {
+                    "preferred-address" -> {
+                        address = initializeAddress(prefs.getString("preferred-address", null))
+                        if (address != null) search()
+                    }
+                    "fallback-address" -> {
+                        // TODO
+                    }
+                    "cache-size" -> {
+                        initializeHTTPClient()
+                    }
+                }
+            }
+        preferences.registerOnSharedPreferenceChangeListener(prefsListener)
+
+        address = initializeAddress(preferences.getString("preferred-address", null))
+
+        initializeHTTPClient()
+
+        initializeViews()
+        initializeListeners()
+
+        if (address != null) search()
+    }
+
+    private fun initializeHTTPClient() {
+        cache?.close()
+        client = null
+
         cache = Cache(
             applicationContext.cacheDir,
-            1024 * 1024 * PreferenceManager.getDefaultSharedPreferences(this)
+            1024 * 1024 * preferences
                 .getInt("cache-size", 128)
                 .toLong()
         )
         client = OkHttpClient.Builder().cache(cache).build()
+    }
 
-        initViews()
-        initListeners()
+    private fun initializeAddress(address: String?): String? {
+        if (!address.isNullOrEmpty()) {
+            if (Pattern.matches("(http://)?[a-zA-Z0-9.\\-]+:[0-9]+", address)) {
+                return if (!address.startsWith("http://")) {
+                    "http://$address"
+                } else {
+                    address
+                }
+            } else {
+                simpleAlert(
+                    this,
+                    "Invalid address format",
+                    "Expected format:\n     [IP/Hostname]:[Port]\nE.g.\n     123.45.6.78:12345",
+                    "Ok"
+                ) {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                }
 
-        search()
+                return null
+            }
+        } else {
+            simpleAlert(
+                this,
+                "Menagerie address not set",
+                "Please set your preferred and fallback addresses",
+                "Ok"
+            ) {
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+
+            return null
+        }
     }
 
     override fun finish() {
@@ -74,16 +138,21 @@ class SearchActivity : AppCompatActivity() {
         thumbnailAdapter?.release()
     }
 
-    private fun initViews() {
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.search_toolbar_menu, menu)
+        return true
+    }
+
+    private fun initializeViews() {
         grid = findViewById(R.id.grid)
         gridProgress = findViewById(R.id.gridProgress)
         searchText = findViewById(R.id.searchText)
         searchButton = findViewById(R.id.searchButton)
 
-        supportActionBar?.hide()
+        setSupportActionBar(findViewById(R.id.my_toolbar))
     }
 
-    private fun initListeners() {
+    private fun initializeListeners() {
         // Hide or show toTopButton based on scroll position
         grid.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
@@ -96,46 +165,13 @@ class SearchActivity : AppCompatActivity() {
             searchButton.performClick()
         }
 
-        searchButton.setOnLongClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                if (ActivityCompat.shouldShowRequestPermissionRationale(
-                        this,
-                        Manifest.permission.READ_EXTERNAL_STORAGE
-                    )
-                ) {
-                    AlertDialog.Builder(this)
-                        .setTitle("Storage permissions required for this operation")
-                        .setMessage("In order to upload files, this app must be granted permission to read external storage")
-                        .setNeutralButton("Ok") { _, _ ->
-                            ActivityCompat.requestPermissions(
-                                this,
-                                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                                permissionsReadStorageForUpload
-                            )
-                        }.create().show()
-                } else {
-                    ActivityCompat.requestPermissions(
-                        this,
-                        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                        permissionsReadStorageForUpload
-                    )
-                }
-            } else {
-                userPickFileForUpload()
-            }
-
-            true
-        }
-
         grid.onGlobalLayout {
             val span = grid.width / TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP,
                 preferredThumbnailWidthDP.toFloat(),
                 resources.displayMetrics
             ).toInt()
-            thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client, data, span)
+            thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, client!!, data, span)
 
             grid.apply {
                 layoutManager = GridLayoutManager(context, span)
@@ -161,6 +197,7 @@ class SearchActivity : AppCompatActivity() {
 
     private fun userPickFileForUpload() {
         var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
+        println(preferences.getString("preferred-address", null))
         chooseFile.type = "*/*"
         chooseFile = Intent.createChooser(chooseFile, "Choose a file")
         startActivityForResult(chooseFile, pickFileResultCode)
@@ -179,54 +216,75 @@ class SearchActivity : AppCompatActivity() {
         if (requestCode == pickFileResultCode) {
             if (resultCode == -1) { // ??? Magic number
                 if (data != null) {
-                    println(MediaStore.getDocumentUri(this, data.data))
-
-                    val path = data.data!!.toPath()
-                    println(path)
-
-                    uploadFile(File(path)) // TODO toFile doesn't work because android documents bullshit
-                    DocumentsContract.getDocumentId(data.data)
+                    upload(data.data!!)
                 }
             }
         }
     }
 
-    private fun Uri.toPath(): String? {
-        when {
-            "content".equals(scheme, ignoreCase = true) -> {
-                val projection = arrayOf("_data")
-                var cursor: Cursor? = null
-                try {
-                    cursor = contentResolver.query(this, projection, null, null, null)!!
-                    val columnIndex: Int = cursor.getColumnIndexOrThrow("_data")
-                    if (cursor.moveToFirst()) {
-                        return cursor.getString(columnIndex)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    cursor?.close()
-                }
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        return when (item?.itemId) {
+            R.id.toolbar_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
             }
-            "file".equals(scheme, ignoreCase = true) -> {
-                return path
+            R.id.toolbar_upload -> {
+                attemptUploadAction()
+                true
+            }
+            else -> {
+                super.onOptionsItemSelected(item)
             }
         }
+    }
 
-        return null
+    private fun attemptUploadAction() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                )
+            ) {
+                AlertDialog.Builder(this)
+                    .setTitle("Storage permissions required for this operation")
+                    .setMessage("In order to upload files, this app must be granted permission to read external storage")
+                    .setNeutralButton("Ok") { _, _ ->
+                        ActivityCompat.requestPermissions(
+                            this,
+                            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                            permissionsReadStorageForUpload
+                        )
+                    }.create().show()
+            } else {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                    permissionsReadStorageForUpload
+                )
+            }
+        } else {
+            userPickFileForUpload()
+        }
     }
 
     /**
-     * Uploads a file to the current Menagerie API server
+     * Uploads content to the API
      *
-     * @param file The file to upload
+     * @param uri URI of content
      */
-    private fun uploadFile(file: File) {
-        val filename: String = URLEncoder.encode(file.name, "UTF-8")
+    private fun upload(uri: Uri) {
+        val stream: InputStream = contentResolver.openInputStream(uri)!!
+        val mime: String = contentResolver.getType(uri)!!
 
-        client.newCall(
+        val filename: String = URLEncoder.encode(System.currentTimeMillis().toString() + "." + MimeTypeMap.getSingleton().getExtensionFromMimeType(mime), "UTF-8")
+
+        val bytes: ByteArray = stream.readBytes() // TODO okhttp3 solution is shit because I can't stream the content
+
+        client!!.newCall(
             Request.Builder()
-                .post(file.asRequestBody("application/octet-stream".toMediaType())).url(
+                .post(bytes.toRequestBody(mime.toMediaType())).url(
                     "$address/upload?filename=$filename"
                 ).build()
         ).enqueue(object : Callback {
@@ -235,12 +293,14 @@ class SearchActivity : AppCompatActivity() {
             }
 
             override fun onResponse(call: Call, response: Response) {
-                if (response.code != 201) {
-                    runOnUiThread {
-                        AlertDialog.Builder(this@SearchActivity).setTitle("Unexpected response")
-                            .setMessage("While uploading: $filename")
-                            .setNeutralButton("Ok") { _, _ -> }
-                            .create().show()
+                response.use {
+                    if (response.code != 201) {
+                        runOnUiThread {
+                            AlertDialog.Builder(this@SearchActivity).setTitle("Unexpected response")
+                                .setMessage("While uploading: $filename")
+                                .setNeutralButton("Ok") { _, _ -> }
+                                .create().show()
+                        }
                     }
                 }
             }
@@ -271,7 +331,7 @@ class SearchActivity : AppCompatActivity() {
         if (descending) url += "&desc"
         if (ungroup) url += "&ungroup"
 
-        client.newCall(Request.Builder().url(url).build())
+        client!!.newCall(Request.Builder().url(url).build())
             .enqueue(object : Callback {
                 override fun onResponse(call: Call, response: Response) {
                     val root = JSONObject(response.body!!.string())

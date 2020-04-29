@@ -6,6 +6,7 @@ import android.view.ViewTreeObserver
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import java.io.File
 import java.text.DecimalFormat
 import kotlin.math.log10
@@ -65,4 +66,15 @@ fun byteSizeToString(size: Long): String? {
             digitGroups.toDouble()
         )
     ).toString() + " " + units[digitGroups]
+}
+
+fun simpleAlert(
+    context: Context,
+    title: String,
+    message: String,
+    button: String,
+    onExit: () -> Unit
+) {
+    AlertDialog.Builder(context).setTitle(title).setMessage(message)
+        .setNeutralButton(button) { _, _ -> onExit() }.create().show()
 }
