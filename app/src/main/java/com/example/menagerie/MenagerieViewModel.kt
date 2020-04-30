@@ -242,8 +242,7 @@ class MenagerieViewModel : ViewModel() {
         id: Int? = null,
         success: ((code: Int, image: Drawable) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
-    ): Call {
-        // TODO error checking
+    ): Call? {
         val call = client!!.newCall(Request.Builder().url(url).build())
 
         call.enqueue(object : Callback {

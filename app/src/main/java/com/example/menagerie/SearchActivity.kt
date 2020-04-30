@@ -121,7 +121,7 @@ class SearchActivity : AppCompatActivity() {
         searchButton = findViewById(R.id.searchButton)
         gridErrorIcon = findViewById(R.id.gridErrorIcon)
 
-        setSupportActionBar(findViewById(R.id.my_toolbar))
+        setSupportActionBar(findViewById(R.id.searchToolbar))
 
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)

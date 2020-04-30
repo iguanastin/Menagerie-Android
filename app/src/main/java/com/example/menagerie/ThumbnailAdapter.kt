@@ -1,5 +1,6 @@
 package com.example.menagerie
 
+import android.content.Intent
 import android.graphics.ImageDecoder
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -59,8 +60,10 @@ class ThumbnailAdapter(
 
         holder.imageView.setImageDrawable(model.getThumbnailCache()[pageData!![position].getInt("id")]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            Toast.makeText(it.context, "" + pageData!![position].getInt("id"), Toast.LENGTH_SHORT)
-                .show()
+            if (pageData!![position].getString("type") == "image") {
+                activity.startActivity(Intent(activity, PreviewActivity::class.java).apply { putExtra(
+                    PREVIEW_EXTRA_ID, pageData!![position].getString("file")) })
+            }
             // TODO
         }
         holder.imageView.setOnLongClickListener {
