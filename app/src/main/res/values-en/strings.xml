@@ -7,4 +7,6 @@
     <string name="menagerie_icon">menagerie icon</string>
     <string name="cd_item_thumbnail">item thumbnail</string>
     <string name="cd_preview_of_item_image">preview of item image</string>
+    <string name="cd_group_icon">group icon</string>
+    <string name="cd_video_icon">video icon</string>
 </resources>

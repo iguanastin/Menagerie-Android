@@ -3,10 +3,13 @@ package com.example.menagerie
 import android.content.Intent
 import android.graphics.ImageDecoder
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.view.get
 import androidx.core.view.marginLeft
 import androidx.core.view.marginRight
 import androidx.lifecycle.Observer
@@ -31,21 +34,29 @@ class ThumbnailAdapter(
         })
     }
 
-    class ViewHolder(val imageView: ImageView) : RecyclerView.ViewHolder(imageView) {
+    class ViewHolder(val view: ConstraintLayout) : RecyclerView.ViewHolder(view) {
         var call: Call? = null
+
+        val imageView: ImageView = view.findViewById(R.id.thumbnailImageView)
+        val groupIcon: ImageView = view.findViewById(R.id.groupIconView)
+        val videoIcon: ImageView = view.findViewById(R.id.videoIconView)
     }
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.thumbnail_layout, parent, false) as ImageView
+            .inflate(R.layout.thumbnail_layout, parent, false) as ConstraintLayout
         val margin: Int = view.marginLeft + view.marginRight
 
         val size: Int = parent.width / span - margin
         view.layoutParams.width = size
         view.layoutParams.height = size
 
-        return ViewHolder(view)
+        val holder = ViewHolder(view)
+        holder.videoIcon.visibility = View.GONE
+        holder.groupIcon.visibility = View.GONE
+
+        return holder
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -58,6 +69,13 @@ class ThumbnailAdapter(
             holder.imageView.setOnLongClickListener(null)
             return
         }
+
+        holder.videoIcon.visibility = View.GONE
+        holder.groupIcon.visibility = View.GONE
+        if (pageData!![position].getString("type") == "video") holder.videoIcon.visibility =
+            View.VISIBLE
+        else if (pageData!![position].getString("type") == "group") holder.groupIcon.visibility =
+            View.VISIBLE
 
         holder.imageView.setImageDrawable(model.getThumbnailCache()[pageData!![position].getInt("id")]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
