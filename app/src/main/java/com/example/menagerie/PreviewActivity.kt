@@ -1,62 +1,154 @@
 package com.example.menagerie
 
+import android.Manifest
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageView
+import android.widget.MediaController
+import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import java.io.IOException
 
-const val PREVIEW_EXTRA_ID = "preview_extra_id"
+
+const val PREVIEW_URL_EXTRA_ID = "preview_extra_id"
+const val PREVIEW_TYPE_EXTRA_ID = "preview_type_extra_id"
+const val PREVIEW_TYPE_IMAGE = "image"
+const val PREVIEW_TYPE_VIDEO = "video"
+
+const val PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD = 5
 
 class PreviewActivity : AppCompatActivity() {
 
     private lateinit var model: MenagerieViewModel
     private lateinit var preferences: SharedPreferences
 
+    private lateinit var imagePreview: ImageView
+    private lateinit var videoPreview: VideoView
+
+    private var position: Int = 0
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_preview)
+        setContentView(R.layout.preview_activity)
+
+        imagePreview = findViewById(R.id.previewImageView)
+        videoPreview = findViewById(R.id.previewVideoView)
 
         setSupportActionBar(findViewById(R.id.previewToolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         model = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
             .create(MenagerieViewModel::class.java)
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
-        val url = intent.getStringExtra(PREVIEW_EXTRA_ID)
-        if (url == null) {
+        val url = intent.getStringExtra(PREVIEW_URL_EXTRA_ID)
+        val type = intent.getStringExtra(PREVIEW_TYPE_EXTRA_ID)
+        if (url.isNullOrEmpty() || type.isNullOrEmpty()) {
             finish()
             return
         }
 
+        when (type) {
+            PREVIEW_TYPE_IMAGE -> {
+                displyImageType(url)
+            }
+            PREVIEW_TYPE_VIDEO -> {
+                displayVideoType(Uri.parse(url))
+            }
+            else -> {
+                simpleAlert(
+                    this,
+                    "Unknown type",
+                    "Cannot display unknown type: $type",
+                    "Close"
+                ) {
+                    finish()
+                }
+            }
+        }
+    }
+
+    private fun displayVideoType(uri: Uri?) {
+        imagePreview.visibility = View.GONE
+        videoPreview.visibility = View.VISIBLE
+
+        val mediaController = MediaController(this)
+        videoPreview.setMediaController(mediaController)
+        mediaController.setAnchorView(videoPreview)
+
+        videoPreview.setOnPreparedListener {
+            videoPreview.seekTo(position)
+
+            println("prepared video player")
+
+            if (position == 0) {
+                videoPreview.start()
+            } else {
+                videoPreview.pause()
+            }
+        }
+
+        videoPreview.setVideoURI(uri)
+        videoPreview.requestFocus()
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt("Position", videoPreview.currentPosition)
+        videoPreview.pause()
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        position = savedInstanceState.getInt("Position")
+        videoPreview.seekTo(position)
+    }
+
+    private fun displyImageType(url: String) {
+        imagePreview.visibility = View.VISIBLE
+        videoPreview.visibility = View.GONE
         model.requestImage(url, success = { code, image ->
             runOnUiThread {
-                findViewById<ImageView>(R.id.previewImageView).setImageDrawable(image)
+                imagePreview.setImageDrawable(image)
             }
         }, failure = { e: IOException? ->
-            simpleAlert(this, "Failed to load", "Unexpected error trying to load file", "Back") {
+            simpleAlert(
+                this,
+                "Failed to load",
+                "Unexpected error trying to load file",
+                "Close"
+            ) {
                 finish()
             }
         })
     }
 
-    /**
-     * Called when options menu is created
-     */
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.preview_toolbar_menu, menu)
         return true
     }
 
-    /**
-     * Called when a menu option is selected
-     */
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        when (requestCode) {
+            PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD -> {
+                download()
+            }
+        }
+    }
+
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        // TODO this might not be fired by the supportToolbar?
         return when (item?.itemId) {
             R.id.toolbar_forget -> {
                 // TODO
@@ -67,7 +159,9 @@ class PreviewActivity : AppCompatActivity() {
                 true
             }
             R.id.toolbar_download -> {
-                // TODO
+                requirePermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, "Write permissions required", "In order to download files, this app must be granted permission to write external storage", PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD) {
+                    download()
+                }
                 true
             }
             R.id.toolbar_share -> {
@@ -78,6 +172,15 @@ class PreviewActivity : AppCompatActivity() {
                 super.onOptionsItemSelected(item)
             }
         }
+    }
+
+    private fun download() {
+        // TODO
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
 }

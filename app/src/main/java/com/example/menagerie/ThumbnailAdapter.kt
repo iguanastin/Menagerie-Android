@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.Call
 import org.json.JSONObject
+import kotlin.collections.ArrayList
 
 class ThumbnailAdapter(
     private val activity: AppCompatActivity,
@@ -60,18 +61,21 @@ class ThumbnailAdapter(
 
         holder.imageView.setImageDrawable(model.getThumbnailCache()[pageData!![position].getInt("id")]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            if (pageData!![position].getString("type") == "image") {
-                activity.startActivity(Intent(activity, PreviewActivity::class.java).apply { putExtra(
-                    PREVIEW_EXTRA_ID, pageData!![position].getString("file")) })
+            if (pageData!![position].getString("type") in arrayOf("image", "video")) {
+                activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
+                    putExtra(PREVIEW_URL_EXTRA_ID, pageData!![position].getString("file"))
+                    putExtra(PREVIEW_TYPE_EXTRA_ID, pageData!![position].getString("type"))
+                })
             }
             // TODO
         }
         holder.imageView.setOnLongClickListener {
-            Toast.makeText(
-                it.context,
-                pageData!![position].getString("thumbnail"),
-                Toast.LENGTH_SHORT
-            ).show()
+            if (pageData!![position].getString("type") in arrayOf("image", "video")) {
+                activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
+                    putExtra(PREVIEW_URL_EXTRA_ID, pageData!![position].getString("file"))
+                    putExtra(PREVIEW_TYPE_EXTRA_ID, "video")
+                })
+            }
             // TODO
             true
         }

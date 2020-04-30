@@ -52,7 +52,7 @@ class SearchActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_search)
+        setContentView(R.layout.search_activity)
 
         model = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
             .create(MenagerieViewModel::class.java)
@@ -171,7 +171,6 @@ class SearchActivity : AppCompatActivity() {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     userPickFileForUpload()
                 }
-                return
             }
         }
     }
