@@ -4,12 +4,14 @@ import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.webkit.MimeTypeMap
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -21,6 +23,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import java.io.IOException
+import java.net.URLEncoder
 
 
 const val DEFAULT_CACHE_SIZE: Int = 128
@@ -38,13 +41,12 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var searchText: EditText
     private lateinit var searchButton: Button
 
-    private lateinit var model: MenagerieViewModel
+    private lateinit var model: SearchViewModel
 
     private lateinit var preferences: SharedPreferences
     private lateinit var prefsListener: (SharedPreferences, String) -> Unit
 
     private var thumbnailAdapter: ThumbnailAdapter? = null
-    private val data: MutableList<JSONObject> = mutableListOf()
 
 
     /**
@@ -54,55 +56,63 @@ class SearchActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.search_activity)
 
+        // Initialize viewmodel
         model = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-            .create(MenagerieViewModel::class.java)
+            .create(SearchViewModel::class.java)
 
+        // Initialize preferences
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
         prefsListener =
             { prefs, key ->
                 when (key) {
                     "preferred-address" -> {
-                        val address = prefs.getString("preferred-address", null)
-                        if (!address.isNullOrEmpty()) model.setAddress(address)
+                        APIClient.address = prefs.getString("preferred-address", null)
                     }
                     "fallback-address" -> {
                         // TODO
                     }
                     "cache-size" -> {
-                        model.setCacheSize(prefs.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong())
+                        ClientManager.cacheSize.postValue(
+                            prefs.getInt(
+                                "cache-size",
+                                DEFAULT_CACHE_SIZE
+                            ).toLong()
+                        )
                     }
                 }
             }
         preferences.registerOnSharedPreferenceChangeListener(prefsListener)
 
-        model.setCacheSize(preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong())
-        model.setCacheDir(cacheDir)
-        val address = preferences.getString("preferred-address", null)
-        if (!address.isNullOrEmpty()) model.setAddress(address)
+        // Initialize HTTP client manager
+        ClientManager.cacheDir.value = cacheDir
+        ClientManager.cacheSize.value =
+            preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
 
+        // Initialize APIClient
+        APIClient.address = preferences.getString("preferred-address", null)
+
+        // Initialize views
         initializeViews()
-        initializeListeners()
 
-        if (model.readyToConnect()) {
-            gridProgress.visibility = View.VISIBLE
-            gridErrorText.visibility = View.GONE
-            gridErrorIcon.visibility = View.GONE
+        // Attempt basic search and populate grid
+        APIClient.requestSearch(failure = { e: IOException? ->
+            e?.printStackTrace()
+            runOnUiThread {
+                gridProgress.visibility = View.GONE
+                gridErrorText.visibility = View.VISIBLE
+                gridErrorIcon.visibility = View.VISIBLE
+            }
+        }, success = { i: Int, list: List<JSONObject> ->
+            runOnUiThread {
+                populateGrid(list)
+            }
+        })
+    }
 
-            model.search(failure = { e: IOException? ->
-                e?.printStackTrace()
-                runOnUiThread {
-                    gridProgress.visibility = View.GONE
-                    gridErrorText.visibility = View.VISIBLE
-                    gridErrorIcon.visibility = View.VISIBLE
-                }
-            }, success = { i: Int, list: List<JSONObject> ->
-                runOnUiThread {
-                    gridProgress.visibility = View.GONE
-                    gridErrorText.visibility = View.GONE
-                    gridErrorIcon.visibility = View.GONE
-                }
-            })
-        }
+    override fun onDestroy() {
+        ClientManager.release()
+
+        super.onDestroy()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -125,6 +135,12 @@ class SearchActivity : AppCompatActivity() {
 
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
+
+        gridProgress.visibility = View.VISIBLE
+        gridErrorText.visibility = View.GONE
+        gridErrorIcon.visibility = View.GONE
+
+        initializeListeners()
     }
 
     /**
@@ -199,16 +215,19 @@ class SearchActivity : AppCompatActivity() {
         if (requestCode == PICK_UPLOAD_FILE_RESULT_CODE) {
             if (resultCode == -1) { // ??? Magic number
                 if (data != null) {
-                    val uri = data.data!!
-                    model.upload(
-                        contentResolver.openInputStream(uri)!!,
-                        contentResolver.getType(uri)!!,
-                        failure = {
-                            simpleAlert(this, "Failed to upload", "Unable to connect", "Ok") {}
-                        })
+                    uploadContent(data.data!!)
                 }
             }
         }
+    }
+
+    private fun uploadContent(uri: Uri) {
+        APIClient.uploadContent(
+            contentResolver.openInputStream(uri)!!,
+            contentResolver.getType(uri)!!,
+            failure = {
+                simpleAlert(this, "Failed to upload", "Unable to connect", "Ok") {}
+            })
     }
 
     /**
@@ -269,17 +288,17 @@ class SearchActivity : AppCompatActivity() {
      */
     fun onSearchSubmit(view: View) {
         hideKeyboard(view)
-        model.search(searchText.text.toString(), success = { code, data ->
-            runOnUiThread {
-                populateGrid(data)
-            }
-        })
+        APIClient.requestSearch(
+            searchText.text.toString(),
+            success = { code, data ->
+                runOnUiThread {
+                    populateGrid(data)
+                }
+            })
     }
 
     private fun populateGrid(newData: List<JSONObject>) {
-        data.clear()
-        data.addAll(newData)
-        thumbnailAdapter?.notifyDataSetChanged()
+        model.pageData.postValue(newData)
 
         gridErrorText.visibility = View.GONE
         gridErrorIcon.visibility = View.GONE

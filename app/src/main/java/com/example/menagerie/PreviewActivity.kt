@@ -25,7 +25,6 @@ const val PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD = 5
 
 class PreviewActivity : AppCompatActivity() {
 
-    private lateinit var model: MenagerieViewModel
     private lateinit var preferences: SharedPreferences
 
     private lateinit var imagePreview: ImageView
@@ -44,8 +43,6 @@ class PreviewActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.previewToolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        model = ViewModelProvider.AndroidViewModelFactory.getInstance(application)
-            .create(MenagerieViewModel::class.java)
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
         val url = intent.getStringExtra(PREVIEW_URL_EXTRA_ID)
@@ -114,9 +111,9 @@ class PreviewActivity : AppCompatActivity() {
     private fun displyImageType(url: String) {
         imagePreview.visibility = View.VISIBLE
         videoPreview.visibility = View.GONE
-        model.requestImage(url, success = { code, image ->
+        APIClient.requestImage(url, success = { code, image ->
             runOnUiThread {
-                imagePreview.setImageDrawable(image)
+                imagePreview.setImageBitmap(image)
             }
         }, failure = { e: IOException? ->
             simpleAlert(
@@ -148,23 +145,26 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        // TODO this might not be fired by the supportToolbar?
         return when (item?.itemId) {
-            R.id.toolbar_forget -> {
-                // TODO
-                true
-            }
-            R.id.toolbar_delete -> {
-                // TODO
-                true
-            }
             R.id.toolbar_download -> {
                 requirePermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, "Write permissions required", "In order to download files, this app must be granted permission to write external storage", PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD) {
                     download()
                 }
                 true
             }
+            R.id.toolbar_edit -> {
+                // TODO
+                true
+            }
             R.id.toolbar_share -> {
+                // TODO
+                true
+            }
+            R.id.toolbar_forget -> {
+                // TODO
+                true
+            }
+            R.id.toolbar_delete -> {
                 // TODO
                 true
             }
@@ -175,7 +175,10 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun download() {
+        println("download")
         // TODO
+
+
     }
 
     override fun onSupportNavigateUp(): Boolean {

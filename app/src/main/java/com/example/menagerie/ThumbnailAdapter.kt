@@ -6,10 +6,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.view.get
 import androidx.core.view.marginLeft
 import androidx.core.view.marginRight
 import androidx.lifecycle.Observer
@@ -20,7 +18,7 @@ import kotlin.collections.ArrayList
 
 class ThumbnailAdapter(
     private val activity: AppCompatActivity,
-    private val model: MenagerieViewModel,
+    private val model: SearchViewModel,
     private val span: Int
 ) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
@@ -28,13 +26,13 @@ class ThumbnailAdapter(
     private var pageData: List<JSONObject>? = null
 
     init {
-        model.getPageData().observe(activity, Observer { data ->
+        model.pageData.observe(activity, Observer { data ->
             pageData = ArrayList(data)
             notifyDataSetChanged()
         })
     }
 
-    class ViewHolder(val view: ConstraintLayout) : RecyclerView.ViewHolder(view) {
+    class ViewHolder(view: ConstraintLayout) : RecyclerView.ViewHolder(view) {
         var call: Call? = null
 
         val imageView: ImageView = view.findViewById(R.id.thumbnailImageView)
@@ -77,7 +75,7 @@ class ThumbnailAdapter(
         else if (pageData!![position].getString("type") == "group") holder.groupIcon.visibility =
             View.VISIBLE
 
-        holder.imageView.setImageDrawable(model.getThumbnailCache()[pageData!![position].getInt("id")]) // Retrieve any known image from cache
+        holder.imageView.setImageDrawable(model.thumbnailCache[pageData!![position].getInt("id")]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
             if (pageData!![position].getString("type") in arrayOf("image", "video")) {
                 activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
@@ -99,20 +97,20 @@ class ThumbnailAdapter(
         }
 
         if (holder.imageView.drawable == null) {
-            holder.call = model.requestImage(
-                pageData!![position].getString("thumbnail"),
-                pageData!![position].getInt("id"),
-                success = { code, image ->
-                    activity.runOnUiThread {
-                        try {
-                            holder.imageView.setImageDrawable(image)
-                        } catch (e: ImageDecoder.DecodeException) {
-                            model.badThumbnail(pageData!![position].getInt("id"))
-                            holder.imageView.setImageDrawable(null)
-                            e.printStackTrace()
-                        }
+            holder.call = APIClient.requestImage(
+                    pageData!![position].getString("thumbnail"),
+            success = { code, image ->
+                activity.runOnUiThread {
+                    try {
+                        holder.imageView.setImageBitmap(image)
+                        // TODO cache thumbnail
+//                        pageData!![position].getInt("id")
+                    } catch (e: ImageDecoder.DecodeException) {
+                        holder.imageView.setImageDrawable(null)
+                        e.printStackTrace()
                     }
-                })
+                }
+            })
         }
     }
 
