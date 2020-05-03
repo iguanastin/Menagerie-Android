@@ -1,15 +1,12 @@
 package com.example.menagerie
 
-import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.edit
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceManager
 
-
-private const val PICK_DOWNLOAD_FOLDER_RESULT = 5
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -22,6 +19,7 @@ class SettingsActivity : AppCompatActivity() {
             .replace(R.id.settings, SettingsFragment())
             .commit()
 
+        setSupportActionBar(findViewById(R.id.settingsToolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 

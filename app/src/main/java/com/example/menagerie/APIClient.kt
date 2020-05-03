@@ -96,7 +96,7 @@ object APIClient {
             })
     }
 
-    private fun requestTags(
+    fun requestTags(
         success: ((code: Int, tags: List<Tag>) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ): Call {

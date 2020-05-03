@@ -6,11 +6,16 @@
         android:title="Upload"
         app:showAsAction="ifRoom"
         android:icon="@drawable/ic_publish_black_24dp"
-        android:id="@+id/toolbar_upload"/>
+        android:id="@+id/search_toolbar_upload"/>
 
     <item
         android:title="Settings"
         app:showAsAction="never"
-        android:id="@+id/toolbar_settings"/>
+        android:id="@+id/search_toolbar_settings"/>
+
+    <item
+        android:title="Tags"
+        app:showAsAction="never"
+        android:id="@+id/search_toolbar_tags"/>
 
 </menu>

@@ -1,6 +1,5 @@
 package com.example.menagerie
 
-import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
@@ -84,7 +83,14 @@ fun simpleAlert(
         .setNeutralButton(button) { _, _ -> onExit() }.create().show()
 }
 
-fun requirePermission(activity: Activity, permission: String, justificationTitle: String, justificationMessage: String, permissionGrantId: Int, success: () -> Unit) {
+fun requirePermission(
+    activity: Activity,
+    permission: String,
+    justificationTitle: String,
+    justificationMessage: String,
+    permissionGrantId: Int,
+    success: () -> Unit
+) {
     if (ContextCompat.checkSelfPermission(
             activity,
             permission

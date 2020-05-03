@@ -11,7 +11,6 @@ import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.webkit.MimeTypeMap
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -23,7 +22,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import java.io.IOException
-import java.net.URLEncoder
 
 
 const val DEFAULT_CACHE_SIZE: Int = 128
@@ -31,6 +29,7 @@ const val PREFERRED_THUMBNAIL_SIZE_DP: Int = 125
 
 const val PERMISSIONS_READ_STORAGE_FOR_UPLOAD: Int = 1
 const val PICK_UPLOAD_FILE_RESULT_CODE: Int = 2
+const val SETTINGS_ACTIVIYY_RESULT_CODE: Int = 6
 
 class SearchActivity : AppCompatActivity() {
 
@@ -61,6 +60,42 @@ class SearchActivity : AppCompatActivity() {
             .create(SearchViewModel::class.java)
 
         // Initialize preferences
+        initializePreferences()
+
+        // Initialize HTTP client manager
+        ClientManager.cacheDir.value = cacheDir
+        ClientManager.cacheSize.value =
+            preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
+
+        // Initialize APIClient
+        APIClient.address = preferences.getString("preferred-address", null)
+
+        // Initialize views
+        initializeViews()
+
+        // Attempt basic search and populate grid
+        if (APIClient.isAddressValid(APIClient.address)) {
+            showGridStatus(progress = true)
+
+            APIClient.requestSearch(failure = { e: IOException? ->
+                e?.printStackTrace()
+                runOnUiThread {
+                    showGridStatus(
+                        error = true,
+                        errorMessage = "Failed to connect to:\n${APIClient.address}"
+                    )
+                }
+            }, success = { i: Int, list: List<JSONObject> ->
+                runOnUiThread {
+                    populateGrid(list)
+                }
+            })
+        } else {
+            showGridStatus(error = true, errorMessage = "Invalid address:\n${APIClient.address}")
+        }
+    }
+
+    private fun initializePreferences() {
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
         prefsListener =
             { prefs, key ->
@@ -82,31 +117,6 @@ class SearchActivity : AppCompatActivity() {
                 }
             }
         preferences.registerOnSharedPreferenceChangeListener(prefsListener)
-
-        // Initialize HTTP client manager
-        ClientManager.cacheDir.value = cacheDir
-        ClientManager.cacheSize.value =
-            preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
-
-        // Initialize APIClient
-        APIClient.address = preferences.getString("preferred-address", null)
-
-        // Initialize views
-        initializeViews()
-
-        // Attempt basic search and populate grid
-        APIClient.requestSearch(failure = { e: IOException? ->
-            e?.printStackTrace()
-            runOnUiThread {
-                gridProgress.visibility = View.GONE
-                gridErrorText.visibility = View.VISIBLE
-                gridErrorIcon.visibility = View.VISIBLE
-            }
-        }, success = { i: Int, list: List<JSONObject> ->
-            runOnUiThread {
-                populateGrid(list)
-            }
-        })
     }
 
     override fun onDestroy() {
@@ -136,11 +146,19 @@ class SearchActivity : AppCompatActivity() {
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
 
-        gridProgress.visibility = View.VISIBLE
-        gridErrorText.visibility = View.GONE
-        gridErrorIcon.visibility = View.GONE
-
         initializeListeners()
+    }
+
+    private fun showGridStatus(
+        progress: Boolean = false,
+        error: Boolean = false,
+        errorMessage: String? = null
+    ) {
+        gridProgress.visibility = if (progress) View.VISIBLE else View.GONE
+
+        gridErrorText.visibility = if (error) View.VISIBLE else View.GONE
+        gridErrorIcon.visibility = if (error) View.VISIBLE else View.GONE
+        if (error && errorMessage != null) gridErrorText.text = errorMessage
     }
 
     /**
@@ -196,7 +214,6 @@ class SearchActivity : AppCompatActivity() {
      */
     private fun userPickFileForUpload() {
         var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
-        println(preferences.getString("preferred-address", null))
         chooseFile.type = "*/*"
         chooseFile = Intent.createChooser(chooseFile, "Choose a file")
         startActivityForResult(chooseFile, PICK_UPLOAD_FILE_RESULT_CODE)
@@ -218,6 +235,32 @@ class SearchActivity : AppCompatActivity() {
                     uploadContent(data.data!!)
                 }
             }
+        } else if (requestCode == SETTINGS_ACTIVIYY_RESULT_CODE) {
+            ClientManager.cacheSize.value =
+                preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
+
+            val address = preferences.getString("preferred-address", null)
+            if (APIClient.isAddressValid(address)) {
+                APIClient.address = address
+                model.pageData.value = ArrayList()
+
+                showGridStatus(progress = true)
+
+                APIClient.requestSearch(failure = {
+                    it?.printStackTrace()
+                    runOnUiThread {
+                        showGridStatus(
+                            error = true,
+                            errorMessage = "Failed to connect to:\n${APIClient.address}"
+                        )
+                    }
+                }, success = { _, pageData ->
+                    populateGrid(pageData)
+                })
+            } else {
+                model.pageData.value = ArrayList()
+                showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
+            }
         }
     }
 
@@ -235,12 +278,19 @@ class SearchActivity : AppCompatActivity() {
      */
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
-            R.id.toolbar_settings -> {
-                startActivity(Intent(this, SettingsActivity::class.java))
+            R.id.search_toolbar_settings -> {
+                startActivityForResult(
+                    Intent(this, SettingsActivity::class.java),
+                    SETTINGS_ACTIVIYY_RESULT_CODE
+                )
                 true
             }
-            R.id.toolbar_upload -> {
+            R.id.search_toolbar_upload -> {
                 attemptUploadAction()
+                true
+            }
+            R.id.search_toolbar_tags -> {
+                startActivity(Intent(this, TagsActivity::class.java))
                 true
             }
             else -> {
@@ -288,21 +338,31 @@ class SearchActivity : AppCompatActivity() {
      */
     fun onSearchSubmit(view: View) {
         hideKeyboard(view)
+
+        showGridStatus(progress = true)
+
         APIClient.requestSearch(
             searchText.text.toString(),
             success = { code, data ->
                 runOnUiThread {
+                    showGridStatus()
+
                     populateGrid(data)
                 }
+            }, failure = {
+                it?.printStackTrace()
+
+                showGridStatus(
+                    error = true,
+                    errorMessage = "Failed to connect to:\n${APIClient.address}"
+                )
             })
     }
 
     private fun populateGrid(newData: List<JSONObject>) {
         model.pageData.postValue(newData)
 
-        gridErrorText.visibility = View.GONE
-        gridErrorIcon.visibility = View.GONE
-        gridProgress.visibility = View.GONE
+        runOnUiThread { showGridStatus(progress = false, error = false) }
     }
 
     /**

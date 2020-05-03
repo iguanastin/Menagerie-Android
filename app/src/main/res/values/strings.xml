@@ -25,4 +25,5 @@
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
     <string name="cd_group_icon">group icon</string>
     <string name="cd_video_icon">video icon</string>
+    <string name="tags_activity_label">Tags</string>
 </resources>

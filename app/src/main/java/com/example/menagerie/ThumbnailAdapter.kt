@@ -16,7 +16,7 @@ import okhttp3.Call
 import org.json.JSONObject
 import kotlin.collections.ArrayList
 
-class ThumbnailAdapter(
+class ThumbnailAdapter (
     private val activity: AppCompatActivity,
     private val model: SearchViewModel,
     private val span: Int
