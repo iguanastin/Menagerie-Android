@@ -1,17 +1,27 @@
 package com.example.menagerie
 
+import android.os.Parcel
+import android.os.Parcelable
 import org.json.JSONException
 import org.json.JSONObject
 
 class Tag(
     val id: Int,
     val name: String,
-    val color: String?,
-    val notes: Array<String>?,
-    val frequency: Int?
-) {
+    val color: String? = null,
+    val notes: Array<String>? = null,
+    val frequency: Int? = null
+): Parcelable {
 
-    companion object {
+    companion object CREATOR : Parcelable.Creator<Tag> {
+        override fun createFromParcel(parcel: Parcel): Tag {
+            return Tag(parcel)
+        }
+
+        override fun newArray(size: Int): Array<Tag?> {
+            return arrayOfNulls(size)
+        }
+
         fun fromJson(json: JSONObject): Tag {
             if (!json.has("id") || !json.has("name")) throw JSONException("Invalid json format. Expected 'id' and 'name' attributes")
 
@@ -26,12 +36,32 @@ class Tag(
         }
     }
 
+    constructor(parcel: Parcel) : this(
+        parcel.readInt(),
+        parcel.readString()!!,
+        parcel.readString(),
+        parcel.createStringArray(),
+        parcel.readValue(Int::class.java.classLoader) as? Int
+    )
+
     override fun equals(other: Any?): Boolean {
         return other is Tag && other.id == id
     }
 
     override fun hashCode(): Int {
         return Integer.hashCode(id)
+    }
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeInt(id)
+        parcel.writeString(name)
+        parcel.writeString(color)
+        parcel.writeStringArray(notes)
+        parcel.writeValue(frequency)
+    }
+
+    override fun describeContents(): Int {
+        return 0
     }
 
 }

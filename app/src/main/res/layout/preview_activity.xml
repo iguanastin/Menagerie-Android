@@ -88,7 +88,7 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/previewIDTextView"
         app:layout_constraintTop_toTopOf="@+id/previewIDTextView"
-        app:srcCompat="@drawable/ic_more_horiz_white_24dp" />
+        app:srcCompat="@drawable/ic_help_white_24dp" />
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

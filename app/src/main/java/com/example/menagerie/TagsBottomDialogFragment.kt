@@ -1,18 +1,26 @@
 package com.example.menagerie
 
+import android.app.Activity
+import android.content.Context
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputFilter
 import android.text.Spanned
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.AutoCompleteTextView
 import android.widget.ImageButton
+import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import java.lang.IllegalArgumentException
 
-class TagsBottomDialogFragment : BottomSheetDialogFragment() {
+class TagsBottomDialogFragment(val item: Item) : BottomSheetDialogFragment() {
+
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -42,9 +50,39 @@ class TagsBottomDialogFragment : BottomSheetDialogFragment() {
             }
         }
 
-        // TODO populate recycler
+        recycler.adapter = TagRecyclerAdapter(requireContext(), item.tags)
+        recycler.layoutManager = LinearLayoutManager(context)
 
         return view
+    }
+
+}
+
+class TagRecyclerAdapter(private val context: Context, private val tags: List<Tag>): RecyclerView.Adapter<TagRecyclerAdapter.TagRecyclerHolder>() {
+
+    class TagRecyclerHolder(val textView: TextView) : RecyclerView.ViewHolder(textView)
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagRecyclerHolder {
+        val textView = TextView(parent.context)
+        val padding: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, context.resources.displayMetrics).toInt()
+        textView.setPadding(padding, padding, padding, padding)
+
+        return TagRecyclerHolder(textView)
+    }
+
+    override fun onBindViewHolder(holder: TagRecyclerHolder, position: Int) {
+        holder.textView.text = tags[position].name
+        val color = tags[position].color
+        try {
+            holder.textView.setTextColor(Color.BLACK)
+            if (!color.isNullOrEmpty()) holder.textView.setTextColor(Color.parseColor(color))
+        } catch (e: IllegalArgumentException) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return tags.size
     }
 
 }

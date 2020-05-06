@@ -79,21 +79,10 @@ class ThumbnailAdapter (
         holder.imageView.setOnClickListener {
             if (pageData!![position].getString("type") in arrayOf("image", "video")) {
                 activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
-                    putExtra(PREVIEW_URL_EXTRA_ID, pageData!![position].getString("file"))
-                    putExtra(PREVIEW_TYPE_EXTRA_ID, pageData!![position].getString("type"))
+                    putExtra(PREVIEW_ITEM_EXTRA_ID, Item.fromJson(pageData!![position]))
                 })
             }
             // TODO
-        }
-        holder.imageView.setOnLongClickListener {
-            if (pageData!![position].getString("type") in arrayOf("image", "video")) {
-                activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
-                    putExtra(PREVIEW_URL_EXTRA_ID, pageData!![position].getString("file"))
-                    putExtra(PREVIEW_TYPE_EXTRA_ID, "video")
-                })
-            }
-            // TODO
-            true
         }
 
         if (holder.imageView.drawable == null) {

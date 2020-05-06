@@ -7,14 +7,16 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.*
+import android.widget.ImageView
+import android.widget.MediaController
+import android.widget.TextView
+import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import java.io.IOException
 
 
-const val PREVIEW_URL_EXTRA_ID = "preview_extra_id"
-const val PREVIEW_TYPE_EXTRA_ID = "preview_type_extra_id"
+const val PREVIEW_ITEM_EXTRA_ID = ""
 const val PREVIEW_TYPE_IMAGE = "image"
 const val PREVIEW_TYPE_VIDEO = "video"
 
@@ -22,17 +24,24 @@ const val PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD = 5
 
 class PreviewActivity : AppCompatActivity() {
 
-    private lateinit var preferences: SharedPreferences
-
     private lateinit var imagePreview: ImageView
     private lateinit var videoPreview: VideoView
 
-    private var position: Int = 0
+    private var item: Item? = null
+
+    private var videoPosition: Int = 0
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.preview_activity)
+
+        item = intent.getParcelableExtra(PREVIEW_ITEM_EXTRA_ID)
+        if (item == null) {
+            simpleAlert(this, message = "Failed to get Item") {
+                finish()
+            }
+        }
 
         imagePreview = findViewById(R.id.previewImageView)
         videoPreview = findViewById(R.id.previewVideoView)
@@ -40,38 +49,25 @@ class PreviewActivity : AppCompatActivity() {
         setSupportActionBar(findViewById(R.id.previewToolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(this)
-
-//        val tv = findViewById<AutoCompleteTextView>(R.id.autoCompleteTextView)
-//        tv.setAdapter(ArrayAdapter(this, android.R.layout.select_dialog_item, arrayOf("asdf", "testing", "tesT_tag")))
-//        tv.setOnItemClickListener { adapterView: AdapterView<*>, view1: View, i: Int, l: Long ->
-//            hideKeyboard(view1)
-//        }
-
         initializePreview()
     }
 
     private fun initializePreview() {
-        val url = intent.getStringExtra(PREVIEW_URL_EXTRA_ID)
-        val type = intent.getStringExtra(PREVIEW_TYPE_EXTRA_ID)
-        if (url.isNullOrEmpty() || type.isNullOrEmpty()) {
-            finish()
-            return
-        }
+        if (item == null) return
 
-        when (type) {
+        findViewById<TextView>(R.id.previewIDTextView).text = item?.id.toString()
+
+        when (item!!.type) {
             PREVIEW_TYPE_IMAGE -> {
-                displyImageType(url)
+                displyImageType(item!!.fileURL!!)
             }
             PREVIEW_TYPE_VIDEO -> {
-                displayVideoType(Uri.parse(url))
+                displayVideoType(Uri.parse(item!!.fileURL!!))
             }
             else -> {
                 simpleAlert(
                     this,
-                    "Unknown type",
-                    "Cannot display unknown type: $type",
-                    "Close"
+                    message = "Cannot display unknown type: ${item!!.type}"
                 ) {
                     finish()
                 }
@@ -88,9 +84,9 @@ class PreviewActivity : AppCompatActivity() {
         mediaController.setAnchorView(videoPreview)
 
         videoPreview.setOnPreparedListener {
-            videoPreview.seekTo(position)
+            videoPreview.seekTo(videoPosition)
 
-            if (position == 0) {
+            if (videoPosition == 0) {
                 videoPreview.start()
             } else {
                 videoPreview.pause()
@@ -109,18 +105,19 @@ class PreviewActivity : AppCompatActivity() {
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        position = savedInstanceState.getInt("Position")
-        videoPreview.seekTo(position)
+        videoPosition = savedInstanceState.getInt("Position")
+        videoPreview.seekTo(videoPosition)
     }
 
     private fun displyImageType(url: String) {
         imagePreview.visibility = View.VISIBLE
         videoPreview.visibility = View.GONE
-        APIClient.requestImage(url, success = { code, image ->
+        APIClient.requestImage(url, success = { _, image ->
             runOnUiThread {
                 imagePreview.setImageBitmap(image)
             }
         }, failure = { e: IOException? ->
+            e?.printStackTrace()
             simpleAlert(
                 this,
                 "Failed to load",
@@ -152,7 +149,13 @@ class PreviewActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.toolbar_download -> {
-                requirePermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE, "Write permissions required", "In order to download files, this app must be granted permission to write external storage", PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD) {
+                requirePermission(
+                    this,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    "Write permissions required",
+                    "In order to download files, this app must be granted permission to write external storage",
+                    PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD
+                ) {
                     download()
                 }
                 true
@@ -206,13 +209,9 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     fun tagsButtonClicked(view: View) {
-        TagsBottomDialogFragment().show(supportFragmentManager, "test tag")
+        TagsBottomDialogFragment(item!!).show(supportFragmentManager, null)
 
         // TODO
-//        simpleAlert(
-//            this,
-//            message = "This feature is not yet implemented"
-//        )
     }
 
     fun infoButtonClicked(view: View) {

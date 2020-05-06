@@ -36,6 +36,8 @@ object APIClient {
             }
         }
 
+    val tagCache = HashMap<Int, Tag>()
+
 
     fun isAddressValid(address: String?): Boolean {
         return !address.isNullOrEmpty() && Pattern.matches(

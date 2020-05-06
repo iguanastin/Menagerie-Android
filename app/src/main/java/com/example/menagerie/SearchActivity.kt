@@ -74,20 +74,38 @@ class SearchActivity : AppCompatActivity() {
         initializeViews()
 
         // Attempt basic search and populate grid
+        performInitialRequests()
+    }
+
+    private fun performInitialRequests() {
         if (APIClient.isAddressValid(APIClient.address)) {
             showGridStatus(progress = true)
 
-            APIClient.requestSearch(failure = { e: IOException? ->
+            APIClient.requestTags(success = { _, tags ->
+                for (tag in tags) {
+                    APIClient.tagCache[tag.id] = tag
+                }
+
+                APIClient.requestSearch(failure = { e: IOException? ->
+                    e?.printStackTrace()
+                    runOnUiThread {
+                        showGridStatus(
+                            error = true,
+                            errorMessage = "Failed to connect to:\n${APIClient.address}"
+                        )
+                    }
+                }, success = { i: Int, list: List<JSONObject> ->
+                    runOnUiThread {
+                        populateGrid(list)
+                    }
+                })
+            }, failure = { e ->
                 e?.printStackTrace()
                 runOnUiThread {
                     showGridStatus(
                         error = true,
                         errorMessage = "Failed to connect to:\n${APIClient.address}"
                     )
-                }
-            }, success = { i: Int, list: List<JSONObject> ->
-                runOnUiThread {
-                    populateGrid(list)
                 }
             })
         } else {
@@ -246,17 +264,7 @@ class SearchActivity : AppCompatActivity() {
 
                 showGridStatus(progress = true)
 
-                APIClient.requestSearch(failure = {
-                    it?.printStackTrace()
-                    runOnUiThread {
-                        showGridStatus(
-                            error = true,
-                            errorMessage = "Failed to connect to:\n${APIClient.address}"
-                        )
-                    }
-                }, success = { _, pageData ->
-                    populateGrid(pageData)
-                })
+                performInitialRequests()
             } else {
                 model.pageData.value = ArrayList()
                 showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
@@ -341,22 +349,36 @@ class SearchActivity : AppCompatActivity() {
 
         showGridStatus(progress = true)
 
-        APIClient.requestSearch(
-            searchText.text.toString(),
-            success = { code, data ->
-                runOnUiThread {
-                    showGridStatus()
+        APIClient.requestTags(success = { _, tags ->
+            for (tag in tags) {
+                APIClient.tagCache[tag.id] = tag
+            }
 
-                    populateGrid(data)
-                }
-            }, failure = {
-                it?.printStackTrace()
+            APIClient.requestSearch(
+                searchText.text.toString(),
+                success = { code, data ->
+                    runOnUiThread {
+                        showGridStatus()
 
+                        populateGrid(data)
+                    }
+                }, failure = {
+                    it?.printStackTrace()
+
+                    showGridStatus(
+                        error = true,
+                        errorMessage = "Failed to connect to:\n${APIClient.address}"
+                    )
+                })
+        }, failure = { e ->
+            e?.printStackTrace()
+            runOnUiThread {
                 showGridStatus(
                     error = true,
                     errorMessage = "Failed to connect to:\n${APIClient.address}"
                 )
-            })
+            }
+        })
     }
 
     private fun populateGrid(newData: List<JSONObject>) {
