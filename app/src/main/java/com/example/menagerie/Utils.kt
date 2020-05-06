@@ -18,7 +18,7 @@ import kotlin.math.log10
 
 fun hideKeyboard(v: View) {
     (v.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
-        v.windowToken,
+        v.applicationWindowToken,
         0
     )
 }
@@ -74,13 +74,13 @@ fun byteSizeToString(size: Long): String? {
 
 fun simpleAlert(
     context: Context,
-    title: String,
+    title: String = "Alert",
     message: String,
-    button: String,
-    onExit: () -> Unit
+    button: String = "Ok",
+    onExit: (() -> Unit)? = null
 ) {
     AlertDialog.Builder(context).setTitle(title).setMessage(message)
-        .setNeutralButton(button) { _, _ -> onExit() }.create().show()
+        .setNeutralButton(button) { _, _ -> if (onExit != null) onExit() }.create().show()
 }
 
 fun requirePermission(

@@ -7,11 +7,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
-import android.widget.MediaController
-import android.widget.VideoView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import java.io.IOException
 
@@ -45,6 +42,16 @@ class PreviewActivity : AppCompatActivity() {
 
         preferences = PreferenceManager.getDefaultSharedPreferences(this)
 
+//        val tv = findViewById<AutoCompleteTextView>(R.id.autoCompleteTextView)
+//        tv.setAdapter(ArrayAdapter(this, android.R.layout.select_dialog_item, arrayOf("asdf", "testing", "tesT_tag")))
+//        tv.setOnItemClickListener { adapterView: AdapterView<*>, view1: View, i: Int, l: Long ->
+//            hideKeyboard(view1)
+//        }
+
+        initializePreview()
+    }
+
+    private fun initializePreview() {
         val url = intent.getStringExtra(PREVIEW_URL_EXTRA_ID)
         val type = intent.getStringExtra(PREVIEW_TYPE_EXTRA_ID)
         if (url.isNullOrEmpty() || type.isNullOrEmpty()) {
@@ -82,8 +89,6 @@ class PreviewActivity : AppCompatActivity() {
 
         videoPreview.setOnPreparedListener {
             videoPreview.seekTo(position)
-
-            println("prepared video player")
 
             if (position == 0) {
                 videoPreview.start()
@@ -154,18 +159,34 @@ class PreviewActivity : AppCompatActivity() {
             }
             R.id.toolbar_edit -> {
                 // TODO
+                simpleAlert(
+                    this,
+                    message = "This feature is not yet implemented"
+                )
                 true
             }
             R.id.toolbar_share -> {
                 // TODO
+                simpleAlert(
+                    this,
+                    message = "This feature is not yet implemented"
+                )
                 true
             }
             R.id.toolbar_forget -> {
                 // TODO
+                simpleAlert(
+                    this,
+                    message = "This feature is not yet implemented"
+                )
                 true
             }
             R.id.toolbar_delete -> {
                 // TODO
+                simpleAlert(
+                    this,
+                    message = "This feature is not yet implemented"
+                )
                 true
             }
             else -> {
@@ -178,7 +199,28 @@ class PreviewActivity : AppCompatActivity() {
         println("download")
         // TODO
 
+        simpleAlert(
+            this,
+            message = "This feature is not yet implemented"
+        )
+    }
 
+    fun tagsButtonClicked(view: View) {
+        TagsBottomDialogFragment().show(supportFragmentManager, "test tag")
+
+        // TODO
+//        simpleAlert(
+//            this,
+//            message = "This feature is not yet implemented"
+//        )
+    }
+
+    fun infoButtonClicked(view: View) {
+        // TODO
+        simpleAlert(
+            this,
+            message = "This feature is not yet implemented"
+        )
     }
 
     override fun onSupportNavigateUp(): Boolean {
