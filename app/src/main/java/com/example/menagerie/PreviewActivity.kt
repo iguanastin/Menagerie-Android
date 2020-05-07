@@ -1,7 +1,7 @@
 package com.example.menagerie
 
 import android.Manifest
-import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
@@ -12,15 +12,8 @@ import android.widget.MediaController
 import android.widget.TextView
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.preference.PreferenceManager
 import java.io.IOException
 
-
-const val PREVIEW_ITEM_EXTRA_ID = ""
-const val PREVIEW_TYPE_IMAGE = "image"
-const val PREVIEW_TYPE_VIDEO = "video"
-
-const val PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD = 5
 
 class PreviewActivity : AppCompatActivity() {
 
@@ -55,22 +48,26 @@ class PreviewActivity : AppCompatActivity() {
     private fun initializePreview() {
         if (item == null) return
 
-        findViewById<TextView>(R.id.previewIDTextView).text = item?.id.toString()
+        findViewById<TextView>(R.id.previewIndexTextView).text = "0/0"
+
+        title = item?.id.toString()
 
         when (item!!.type) {
-            PREVIEW_TYPE_IMAGE -> {
+            Item.IMAGE_TYPE -> {
                 displyImageType(item!!.fileURL!!)
             }
-            PREVIEW_TYPE_VIDEO -> {
+            Item.VIDEO_TYPE -> {
                 displayVideoType(Uri.parse(item!!.fileURL!!))
             }
+            Item.GROUP_TYPE -> {
+                // TODO display some group thumbnails and title
+                // TODO allow user to open group
+            }
+            Item.UNKNOWN_TYPE -> {
+                // TODO display notice and filename of unknown type
+            }
             else -> {
-                simpleAlert(
-                    this,
-                    message = "Cannot display unknown type: ${item!!.type}"
-                ) {
-                    finish()
-                }
+                // TODO display error message
             }
         }
     }
@@ -140,8 +137,8 @@ class PreviewActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         when (requestCode) {
-            PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD -> {
-                download()
+            Codes.preview_request_storage_write_perms_for_download.ordinal -> {
+                if (grantResults[0] == PackageManager.PERMISSION_GRANTED) download()
             }
         }
     }
@@ -154,7 +151,7 @@ class PreviewActivity : AppCompatActivity() {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     "Write permissions required",
                     "In order to download files, this app must be granted permission to write external storage",
-                    PERMISSIONS_WRITE_STORAGE_FOR_DOWNLOAD
+                    Codes.preview_request_storage_write_perms_for_download.ordinal
                 ) {
                     download()
                 }
@@ -208,18 +205,12 @@ class PreviewActivity : AppCompatActivity() {
         )
     }
 
-    fun tagsButtonClicked(view: View) {
+    fun tagsButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
         TagsBottomDialogFragment(item!!).show(supportFragmentManager, null)
-
-        // TODO
     }
 
-    fun infoButtonClicked(view: View) {
-        // TODO
-        simpleAlert(
-            this,
-            message = "This feature is not yet implemented"
-        )
+    fun infoButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
+        ItemInfoBottomDialogFragment(item!!).show(supportFragmentManager, null)
     }
 
     override fun onSupportNavigateUp(): Boolean {

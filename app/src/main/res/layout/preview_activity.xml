@@ -18,20 +18,12 @@
         app:layout_constraintTop_toTopOf="parent"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
 
-    <androidx.viewpager2.widget.ViewPager2
-        android:id="@+id/viewPager"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
     <ImageView
         android:id="@+id/previewImageView"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:contentDescription="preview of image"
-        app:layout_constraintBottom_toTopOf="@+id/viewPager"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/previewToolbar"
@@ -41,7 +33,7 @@
         android:id="@+id/previewVideoView"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/viewPager"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/previewToolbar" />
@@ -57,13 +49,13 @@
         android:onClick="tagsButtonClicked"
         android:padding="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/previewIDTextView"
+        app:layout_constraintEnd_toStartOf="@+id/previewIndexTextView"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@drawable/ic_style_white_24dp" />
 
     <TextView
-        android:id="@+id/previewIDTextView"
+        android:id="@+id/previewIndexTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/rounded_rectangle"
@@ -83,11 +75,11 @@
         android:background="@drawable/rounded_rectangle"
         android:onClick="infoButtonClicked"
         android:padding="10dp"
-        app:layout_constraintBottom_toBottomOf="@+id/previewIDTextView"
+        app:layout_constraintBottom_toBottomOf="@+id/previewIndexTextView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toEndOf="@+id/previewIDTextView"
-        app:layout_constraintTop_toTopOf="@+id/previewIDTextView"
+        app:layout_constraintStart_toEndOf="@+id/previewIndexTextView"
+        app:layout_constraintTop_toTopOf="@+id/previewIndexTextView"
         app:srcCompat="@drawable/ic_help_white_24dp" />
 
 

@@ -1,6 +1,5 @@
 package com.example.menagerie
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.Color
 import android.os.Bundle
@@ -14,10 +13,12 @@ import android.view.inputmethod.EditorInfo
 import android.widget.AutoCompleteTextView
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.core.view.marginBottom
+import androidx.core.view.setPadding
+import androidx.fragment.app.DialogFragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
-import java.lang.IllegalArgumentException
 
 class TagsBottomDialogFragment(val item: Item) : BottomSheetDialogFragment() {
 
@@ -65,7 +66,7 @@ class TagRecyclerAdapter(private val context: Context, private val tags: List<Ta
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagRecyclerHolder {
         val textView = TextView(parent.context)
         val padding: Int = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, context.resources.displayMetrics).toInt()
-        textView.setPadding(padding, padding, padding, padding)
+        textView.setPadding(padding)
 
         return TagRecyclerHolder(textView)
     }
@@ -73,11 +74,15 @@ class TagRecyclerAdapter(private val context: Context, private val tags: List<Ta
     override fun onBindViewHolder(holder: TagRecyclerHolder, position: Int) {
         holder.textView.text = tags[position].name
         val color = tags[position].color
-        try {
-            holder.textView.setTextColor(Color.BLACK)
-            if (!color.isNullOrEmpty()) holder.textView.setTextColor(Color.parseColor(color))
-        } catch (e: IllegalArgumentException) {
-            e.printStackTrace()
+
+        holder.textView.setTextColor(Color.WHITE)
+        if (!color.isNullOrEmpty()) {
+            try {
+                holder.textView.setTextColor(Color.parseColor(cssColorMap.getOrDefault(color, color)))
+            } catch (e: IllegalArgumentException) {
+                println("Invalid color: " + tags[position].color)
+                e.printStackTrace()
+            }
         }
     }
 

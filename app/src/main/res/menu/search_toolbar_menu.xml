@@ -5,7 +5,7 @@
     <item
         android:title="Upload"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/ic_publish_black_24dp"
+        android:icon="@drawable/ic_publish_white_24dp"
         android:id="@+id/search_toolbar_upload"/>
 
     <item

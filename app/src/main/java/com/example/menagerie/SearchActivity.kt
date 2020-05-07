@@ -27,9 +27,6 @@ import java.io.IOException
 const val DEFAULT_CACHE_SIZE: Int = 128
 const val PREFERRED_THUMBNAIL_SIZE_DP: Int = 125
 
-const val PERMISSIONS_READ_STORAGE_FOR_UPLOAD: Int = 1
-const val PICK_UPLOAD_FILE_RESULT_CODE: Int = 2
-const val SETTINGS_ACTIVIYY_RESULT_CODE: Int = 6
 
 class SearchActivity : AppCompatActivity() {
 
@@ -94,7 +91,7 @@ class SearchActivity : AppCompatActivity() {
                             errorMessage = "Failed to connect to:\n${APIClient.address}"
                         )
                     }
-                }, success = { i: Int, list: List<JSONObject> ->
+                }, success = { _: Int, list: List<JSONObject> ->
                     runOnUiThread {
                         populateGrid(list)
                     }
@@ -219,7 +216,7 @@ class SearchActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         when (requestCode) {
-            PERMISSIONS_READ_STORAGE_FOR_UPLOAD -> {
+            Codes.search_request_storage_permissions_for_upload.ordinal -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                     userPickFileForUpload()
                 }
@@ -234,7 +231,7 @@ class SearchActivity : AppCompatActivity() {
         var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
         chooseFile.type = "*/*"
         chooseFile = Intent.createChooser(chooseFile, "Choose a file")
-        startActivityForResult(chooseFile, PICK_UPLOAD_FILE_RESULT_CODE)
+        startActivityForResult(chooseFile, Codes.search_activity_result_pick_file_for_upload.ordinal)
     }
 
     /**
@@ -247,13 +244,13 @@ class SearchActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == PICK_UPLOAD_FILE_RESULT_CODE) {
+        if (requestCode == Codes.search_activity_result_pick_file_for_upload.ordinal) {
             if (resultCode == -1) { // ??? Magic number
                 if (data != null) {
                     uploadContent(data.data!!)
                 }
             }
-        } else if (requestCode == SETTINGS_ACTIVIYY_RESULT_CODE) {
+        } else if (requestCode == Codes.search_activity_result_settings_closed.ordinal) {
             ClientManager.cacheSize.value =
                 preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
 
@@ -289,7 +286,7 @@ class SearchActivity : AppCompatActivity() {
             R.id.search_toolbar_settings -> {
                 startActivityForResult(
                     Intent(this, SettingsActivity::class.java),
-                    SETTINGS_ACTIVIYY_RESULT_CODE
+                    Codes.search_activity_result_settings_closed.ordinal
                 )
                 true
             }
@@ -326,14 +323,14 @@ class SearchActivity : AppCompatActivity() {
                         ActivityCompat.requestPermissions(
                             this,
                             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                            PERMISSIONS_READ_STORAGE_FOR_UPLOAD
+                            Codes.search_request_storage_permissions_for_upload.ordinal
                         )
                     }.create().show()
             } else {
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    PERMISSIONS_READ_STORAGE_FOR_UPLOAD
+                    Codes.search_request_storage_permissions_for_upload.ordinal
                 )
             }
         } else {
@@ -356,7 +353,7 @@ class SearchActivity : AppCompatActivity() {
 
             APIClient.requestSearch(
                 searchText.text.toString(),
-                success = { code, data ->
+                success = { _, data ->
                     runOnUiThread {
                         showGridStatus()
 
@@ -390,6 +387,7 @@ class SearchActivity : AppCompatActivity() {
     /**
      * Scrolls the grid to the top
      */
+    @Suppress("UNUSED_PARAMETER")
     fun toTopOfGrid(view: View) {
         if ((grid.layoutManager as GridLayoutManager).findLastVisibleItemPosition() < 100)
             grid.smoothScrollToPosition(0)

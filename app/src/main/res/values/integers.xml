@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <integer name="request_external_storage_write_permissions_for_download">0</integer>
+
 </resources>

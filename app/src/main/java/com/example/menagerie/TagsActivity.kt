@@ -31,7 +31,7 @@ class TagsActivity : AppCompatActivity() {
                 simpleAlert(this, "Failed connection", "Failed to connect to: ${APIClient.address}", "Ok") {
                     runOnUiThread { finish() }
                 }
-            }, success = { code: Int, tags: List<Tag> ->
+            }, success = { _: Int, tags: List<Tag> ->
                 runOnUiThread {
                     val recycler = findViewById<RecyclerView>(R.id.tags_recycler_view)
                     recycler.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)

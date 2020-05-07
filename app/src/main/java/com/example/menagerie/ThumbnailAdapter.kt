@@ -88,7 +88,7 @@ class ThumbnailAdapter (
         if (holder.imageView.drawable == null) {
             holder.call = APIClient.requestImage(
                     pageData!![position].getString("thumbnail"),
-            success = { code, image ->
+            success = { _, image ->
                 activity.runOnUiThread {
                     try {
                         holder.imageView.setImageBitmap(image)
