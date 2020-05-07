@@ -18,6 +18,15 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="Authentication">
+        <SwitchPreferenceCompat
+            app:key="lock-app"
+            app:title="Lock app"
+            app:defaultValue="false"
+            app:summaryOn="Will require biometric or pattern/code to open Menagerie"
+            app:summaryOff="No authentication required to open Menagerie" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="Cache">
         <SeekBarPreference
             app:key="cache-size"

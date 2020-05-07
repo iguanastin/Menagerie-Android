@@ -1,6 +1,9 @@
 package com.example.menagerie
 
 import android.Manifest
+import android.app.Activity
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -14,6 +17,8 @@ import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
@@ -70,8 +75,72 @@ class SearchActivity : AppCompatActivity() {
         // Initialize views
         initializeViews()
 
+        if (preferences.getBoolean("lock-app", false)) {
+            if (BiometricManager.from(this)
+                    .canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
+            ) {
+                val executor = ContextCompat.getMainExecutor(this)
+
+                val callback = object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        simpleAlert(
+                            this@SearchActivity,
+                            title = "Fatal error while authenticating",
+                            message = errString.toString()
+                        ) {
+                            finish()
+                        }
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        super.onAuthenticationFailed()
+                        simpleAlert(
+                            this@SearchActivity,
+                            title = "Error",
+                            message = "Unable to authenticate"
+                        ) {
+                            finish()
+                        }
+                    }
+
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        super.onAuthenticationSucceeded(result)
+                        performInitialRequests()
+                    }
+                }
+
+                val biometricPrompt = BiometricPrompt(this, executor, callback)
+
+                biometricPrompt.authenticate(
+                    BiometricPrompt.PromptInfo.Builder().setTitle("Authenticate")
+                        .setDeviceCredentialAllowed(true).build()
+                )
+            } else {
+                val km: KeyguardManager =
+                    getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+
+                if (km.isKeyguardSecure) {
+                    val authIntent: Intent = km.createConfirmDeviceCredentialIntent(
+                        "Authenticate",
+                        "Authenticate in order to access Menagerie"
+                    )
+                    startActivityForResult(
+                        authIntent,
+                        Codes.search_activity_result_authenticate.ordinal
+                    )
+                } else {
+                    simpleAlert(this, message = "No pass code or pattern is set") {
+                        performInitialRequests()
+                    }
+                }
+            }
+        } else {
+            performInitialRequests()
+        }
+
         // Attempt basic search and populate grid
-        performInitialRequests()
+//        performInitialRequests()
     }
 
     private fun performInitialRequests() {
@@ -161,6 +230,8 @@ class SearchActivity : AppCompatActivity() {
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
 
+        showGridStatus()
+
         initializeListeners()
     }
 
@@ -231,7 +302,10 @@ class SearchActivity : AppCompatActivity() {
         var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
         chooseFile.type = "*/*"
         chooseFile = Intent.createChooser(chooseFile, "Choose a file")
-        startActivityForResult(chooseFile, Codes.search_activity_result_pick_file_for_upload.ordinal)
+        startActivityForResult(
+            chooseFile,
+            Codes.search_activity_result_pick_file_for_upload.ordinal
+        )
     }
 
     /**
@@ -245,7 +319,7 @@ class SearchActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == Codes.search_activity_result_pick_file_for_upload.ordinal) {
-            if (resultCode == -1) { // ??? Magic number
+            if (resultCode == Activity.RESULT_OK) {
                 if (data != null) {
                     uploadContent(data.data!!)
                 }
@@ -266,6 +340,16 @@ class SearchActivity : AppCompatActivity() {
                 model.pageData.value = ArrayList()
                 showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
             }
+        } else if (requestCode == Codes.search_activity_result_authenticate.ordinal) {
+            if (resultCode == RESULT_OK) {
+                performInitialRequests()
+            } else {
+                simpleAlert(this, message = "Unable to authenticate") {
+                    finish()
+                }
+            }
+        } else {
+            println("Unexpected requestCode: $requestCode")
         }
     }
 
