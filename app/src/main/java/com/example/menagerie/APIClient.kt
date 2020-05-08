@@ -1,10 +1,10 @@
 package com.example.menagerie
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.webkit.MimeTypeMap
-import androidx.lifecycle.MutableLiveData
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -12,10 +12,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import org.json.JSONObject
+import java.io.File
+import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.net.URLEncoder
 import java.util.regex.Pattern
+
 
 object APIClient {
 
@@ -196,6 +199,43 @@ object APIClient {
                             } catch (e: ImageDecoder.DecodeException) {
                                 failure?.invoke(e)
                             }
+                        }
+                    } else {
+                        failure?.invoke(null)
+                    }
+                }
+            }
+        })
+
+        return call
+    }
+
+    fun requestFile(
+        url: String,
+        saveTo: File,
+        success: ((code: Int, file: File) -> Unit)? = null,
+        failure: ((e: IOException?) -> Unit)? = null
+    ): Call? {
+        val call = ClientManager.client!!.newCall(Request.Builder().url(url).build())
+
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                failure?.invoke(e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (it.isSuccessful) {
+                        val bytes: InputStream? = response.body?.byteStream()
+                        if (bytes == null) {
+                            failure?.invoke(null)
+                        } else {
+                            bytes.use { stream: InputStream ->
+                                saveTo.outputStream()
+                                    .use { fos: FileOutputStream -> stream.copyTo(fos) }
+                            }
+
+                            success?.invoke(it.code, saveTo)
                         }
                     } else {
                         failure?.invoke(null)

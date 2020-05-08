@@ -1,9 +1,12 @@
 package com.example.menagerie
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -12,6 +15,10 @@ import android.widget.MediaController
 import android.widget.TextView
 import android.widget.VideoView
 import androidx.appcompat.app.AppCompatActivity
+import okio.Okio
+import okio.Source
+import okio.source
+import java.io.File
 import java.io.IOException
 
 
@@ -137,7 +144,7 @@ class PreviewActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         when (requestCode) {
-            Codes.preview_request_storage_write_perms_for_download.ordinal -> {
+            Codes.preview_request_storage_perms_for_download.ordinal -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) download()
             }
         }
@@ -146,12 +153,11 @@ class PreviewActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.toolbar_download -> {
-                requirePermission(
-                    this,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    "Write permissions required",
-                    "In order to download files, this app must be granted permission to write external storage",
-                    Codes.preview_request_storage_write_perms_for_download.ordinal
+                requirePermissions(
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
+                    "Storage permissions required",
+                    "In order to download files, this app must be granted permission to read/write external storage",
+                    Codes.preview_request_storage_perms_for_download.ordinal
                 ) {
                     download()
                 }
@@ -196,13 +202,16 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun download() {
-        println("download")
-        // TODO
+        val filename = item!!.filePath!!.substringAfterLast("/").substringAfterLast("\\")
+        val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-        simpleAlert(
-            this,
-            message = "This feature is not yet implemented"
-        )
+        APIClient.requestFile(item!!.fileURL!!, File(dir, filename), success = { _, file ->
+            MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), null, null)
+
+            runOnUiThread {
+                simpleAlert(this, message = "Downloaded file: $filename")
+            }
+        })
     }
 
     fun tagsButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {

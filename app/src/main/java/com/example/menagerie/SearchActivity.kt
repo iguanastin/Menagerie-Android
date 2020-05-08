@@ -75,75 +75,85 @@ class SearchActivity : AppCompatActivity() {
         // Initialize views
         initializeViews()
 
+        handleLockAndStart()
+    }
+
+    private fun handleLockAndStart() {
         if (preferences.getBoolean("lock-app", false)) {
             if (BiometricManager.from(this)
                     .canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
             ) {
-                val executor = ContextCompat.getMainExecutor(this)
-
-                val callback = object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                        super.onAuthenticationError(errorCode, errString)
-                        simpleAlert(
-                            this@SearchActivity,
-                            title = "Fatal error while authenticating",
-                            message = errString.toString()
-                        ) {
-                            finish()
-                        }
-                    }
-
-                    override fun onAuthenticationFailed() {
-                        super.onAuthenticationFailed()
-                        simpleAlert(
-                            this@SearchActivity,
-                            title = "Error",
-                            message = "Unable to authenticate"
-                        ) {
-                            finish()
-                        }
-                    }
-
-                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        super.onAuthenticationSucceeded(result)
-                        performInitialRequests()
-                    }
-                }
-
-                val biometricPrompt = BiometricPrompt(this, executor, callback)
-
-                biometricPrompt.authenticate(
-                    BiometricPrompt.PromptInfo.Builder().setTitle("Authenticate")
-                        .setDeviceCredentialAllowed(true).build()
-                )
+                promptBiometricAuth()
             } else {
                 val km: KeyguardManager =
                     getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
 
                 if (km.isKeyguardSecure) {
-                    val authIntent: Intent = km.createConfirmDeviceCredentialIntent(
-                        "Authenticate",
-                        "Authenticate in order to access Menagerie"
-                    )
-                    startActivityForResult(
-                        authIntent,
-                        Codes.search_activity_result_authenticate.ordinal
-                    )
+                    promptKeyguardAuth(km)
                 } else {
                     simpleAlert(this, message = "No pass code or pattern is set") {
-                        performInitialRequests()
+                        performSearch()
                     }
                 }
             }
         } else {
-            performInitialRequests()
+            performSearch()
         }
-
-        // Attempt basic search and populate grid
-//        performInitialRequests()
     }
 
-    private fun performInitialRequests() {
+    private fun promptKeyguardAuth(km: KeyguardManager) {
+        val authIntent: Intent = km.createConfirmDeviceCredentialIntent(
+            "Authenticate",
+            "Authenticate in order to access Menagerie"
+        )
+        startActivityForResult(
+            authIntent,
+            Codes.search_activity_result_authenticate.ordinal
+        )
+    }
+
+    private fun promptBiometricAuth() {
+        val callback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                simpleAlert(
+                    this@SearchActivity,
+                    title = "Fatal error while authenticating",
+                    message = errString.toString()
+                ) {
+                    finish()
+                }
+            }
+
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                simpleAlert(
+                    this@SearchActivity,
+                    title = "Error",
+                    message = "Unable to authenticate"
+                ) {
+                    finish()
+                }
+            }
+
+            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                performSearch()
+            }
+        }
+
+        val executor = ContextCompat.getMainExecutor(this)
+        val biometricPrompt = BiometricPrompt(this, executor, callback)
+
+        biometricPrompt.authenticate(
+            BiometricPrompt.PromptInfo.Builder().setTitle("Authenticate")
+                .setDeviceCredentialAllowed(true).build()
+        )
+    }
+
+    private fun performSearch() {
+        model.pageData.value = emptyList()
+
         if (APIClient.isAddressValid(APIClient.address)) {
             showGridStatus(progress = true)
 
@@ -152,19 +162,22 @@ class SearchActivity : AppCompatActivity() {
                     APIClient.tagCache[tag.id] = tag
                 }
 
-                APIClient.requestSearch(failure = { e: IOException? ->
-                    e?.printStackTrace()
-                    runOnUiThread {
-                        showGridStatus(
-                            error = true,
-                            errorMessage = "Failed to connect to:\n${APIClient.address}"
-                        )
-                    }
-                }, success = { _: Int, list: List<JSONObject> ->
-                    runOnUiThread {
-                        populateGrid(list)
-                    }
-                })
+                APIClient.requestSearch(
+                    terms = searchText.text.toString(),
+                    failure = { e: IOException? ->
+                        e?.printStackTrace()
+                        runOnUiThread {
+                            showGridStatus(
+                                error = true,
+                                errorMessage = "Failed to connect to:\n${APIClient.address}"
+                            )
+                        }
+                    },
+                    success = { _: Int, list: List<JSONObject> ->
+                        runOnUiThread {
+                            populateGrid(list)
+                        }
+                    })
             }, failure = { e ->
                 e?.printStackTrace()
                 runOnUiThread {
@@ -335,14 +348,14 @@ class SearchActivity : AppCompatActivity() {
 
                 showGridStatus(progress = true)
 
-                performInitialRequests()
+                performSearch()
             } else {
                 model.pageData.value = ArrayList()
                 showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
             }
         } else if (requestCode == Codes.search_activity_result_authenticate.ordinal) {
             if (resultCode == RESULT_OK) {
-                performInitialRequests()
+                performSearch()
             } else {
                 simpleAlert(this, message = "Unable to authenticate") {
                     finish()
@@ -392,32 +405,12 @@ class SearchActivity : AppCompatActivity() {
      * Performs permissions checks and attempts to request a file from the user
      */
     private fun attemptUploadAction() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED
+        requirePermissions(
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+            "Storage permissions required for this operation",
+            "In order to upload files, this app must be granted permission to read external storage",
+            Codes.search_request_storage_permissions_for_upload.ordinal
         ) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(
-                    this,
-                    Manifest.permission.READ_EXTERNAL_STORAGE
-                )
-            ) {
-                AlertDialog.Builder(this)
-                    .setTitle("Storage permissions required for this operation")
-                    .setMessage("In order to upload files, this app must be granted permission to read external storage")
-                    .setNeutralButton("Ok") { _, _ ->
-                        ActivityCompat.requestPermissions(
-                            this,
-                            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                            Codes.search_request_storage_permissions_for_upload.ordinal
-                        )
-                    }.create().show()
-            } else {
-                ActivityCompat.requestPermissions(
-                    this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                    Codes.search_request_storage_permissions_for_upload.ordinal
-                )
-            }
-        } else {
             userPickFileForUpload()
         }
     }
@@ -425,41 +418,9 @@ class SearchActivity : AppCompatActivity() {
     /**
      * Called when the user submits a search
      */
+    @Suppress("UNUSED_PARAMETER")
     fun onSearchSubmit(view: View) {
-        hideKeyboard(view)
-
-        showGridStatus(progress = true)
-
-        APIClient.requestTags(success = { _, tags ->
-            for (tag in tags) {
-                APIClient.tagCache[tag.id] = tag
-            }
-
-            APIClient.requestSearch(
-                searchText.text.toString(),
-                success = { _, data ->
-                    runOnUiThread {
-                        showGridStatus()
-
-                        populateGrid(data)
-                    }
-                }, failure = {
-                    it?.printStackTrace()
-
-                    showGridStatus(
-                        error = true,
-                        errorMessage = "Failed to connect to:\n${APIClient.address}"
-                    )
-                })
-        }, failure = { e ->
-            e?.printStackTrace()
-            runOnUiThread {
-                showGridStatus(
-                    error = true,
-                    errorMessage = "Failed to connect to:\n${APIClient.address}"
-                )
-            }
-        })
+        performSearch()
     }
 
     private fun populateGrid(newData: List<JSONObject>) {

@@ -173,7 +173,6 @@ val cssColorMap: Map<String, String> by lazy {
 }
 
 
-
 fun hideKeyboard(v: View) {
     (v.context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(
         v.applicationWindowToken,
@@ -241,28 +240,33 @@ fun simpleAlert(
         .setNeutralButton(button) { _, _ -> if (onExit != null) onExit() }.create().show()
 }
 
-fun requirePermission(
-    activity: Activity,
-    permission: String,
+fun Activity.requirePermissions(
+    permissions: Array<String>,
     justificationTitle: String,
     justificationMessage: String,
     permissionGrantId: Int,
     success: () -> Unit
 ) {
-    if (ContextCompat.checkSelfPermission(
-            activity,
-            permission
-        ) != PackageManager.PERMISSION_GRANTED
-    ) {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
-        ) {
-            simpleAlert(activity, title = justificationTitle, message = justificationMessage) {
-                ActivityCompat.requestPermissions(activity, arrayOf(permission), permissionGrantId)
+    val needed: MutableList<String> = mutableListOf()
+    var showRationale = false
+    for (perm in permissions) {
+        if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
+            needed.add(perm)
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, perm)) {
+                showRationale = true
+            }
+        }
+    }
+    if (needed.isNotEmpty()) {
+        if (showRationale) {
+            simpleAlert(this, title = justificationTitle, message = justificationMessage) {
+                ActivityCompat.requestPermissions(this, permissions, permissionGrantId)
             }
         } else {
-            ActivityCompat.requestPermissions(activity, arrayOf(permission), permissionGrantId)
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), permissionGrantId)
         }
     } else {
-        success.invoke()
+        success()
     }
 }
