@@ -27,7 +27,7 @@ class PreviewActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.preview_activity)
+        setContentView(R.layout.activity_preview)
 
         item = intent.getParcelableExtra(PREVIEW_ITEM_EXTRA_ID)
         if (item == null) {
@@ -206,11 +206,11 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     fun tagsButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
-        TagsBottomDialogFragment(item!!).show(supportFragmentManager, null)
+        TagsDialogFragment(item!!).show(supportFragmentManager, null)
     }
 
     fun infoButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
-        ItemInfoBottomDialogFragment(item!!).show(supportFragmentManager, null)
+        ItemInfoDialogFragment(item!!).show(supportFragmentManager, null)
     }
 
     override fun onSupportNavigateUp(): Boolean {

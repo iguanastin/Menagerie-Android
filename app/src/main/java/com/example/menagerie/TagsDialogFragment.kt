@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class TagsBottomDialogFragment(val item: Item) : BottomSheetDialogFragment() {
+class TagsDialogFragment(val item: Item) : BottomSheetDialogFragment() {
 
 
     override fun onCreateView(
@@ -21,7 +21,7 @@ class TagsBottomDialogFragment(val item: Item) : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.layout_tags_bottom_fragment, container, false)
+        val view = inflater.inflate(R.layout.layout_tags_fragment, container, false)
 
         val submit = view.findViewById<ImageButton>(R.id.tagsFragmentSendButton)
         val textEdit = view.findViewById<AutoCompleteTextView>(R.id.tagsFragmentTextEdit)

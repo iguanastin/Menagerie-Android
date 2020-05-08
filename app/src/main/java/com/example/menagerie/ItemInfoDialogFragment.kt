@@ -10,10 +10,9 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-class ItemInfoBottomDialogFragment(val item: Item) : BottomSheetDialogFragment() {
+class ItemInfoDialogFragment(val item: Item) : BottomSheetDialogFragment() {
 
 
     @SuppressLint("SetTextI18n")
@@ -22,7 +21,7 @@ class ItemInfoBottomDialogFragment(val item: Item) : BottomSheetDialogFragment()
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.layout_item_info_bottom_fragment, container, false)
+        val view = inflater.inflate(R.layout.layout_item_info_fragment, container, false)
 
         view.findViewById<TextView>(R.id.itemInfoTextView1).text = "ID: ${item.id}"
         view.findViewById<TextView>(R.id.itemInfoTextView2).text = "Path: ${item.filePath}"

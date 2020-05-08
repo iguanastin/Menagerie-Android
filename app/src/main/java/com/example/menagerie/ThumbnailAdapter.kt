@@ -43,7 +43,7 @@ class ThumbnailAdapter (
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.thumbnail_layout, parent, false) as ConstraintLayout
+            .inflate(R.layout.layout_thumbnail, parent, false) as ConstraintLayout
         val margin: Int = view.marginLeft + view.marginRight
 
         val size: Int = parent.width / span - margin

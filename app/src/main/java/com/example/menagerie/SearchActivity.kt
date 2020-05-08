@@ -55,7 +55,7 @@ class SearchActivity : AppCompatActivity() {
      */
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.search_activity)
+        setContentView(R.layout.activity_search)
 
         // Initialize viewmodel
         model = ViewModelProvider.AndroidViewModelFactory.getInstance(application)

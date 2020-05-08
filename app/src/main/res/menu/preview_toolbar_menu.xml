@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/toolbar_download"
-        android:icon="@drawable/ic_file_download_black_24dp"
+        android:icon="@drawable/ic_file_download_white_24dp"
         android:title="Download"
         app:showAsAction="ifRoom" />
 

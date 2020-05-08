@@ -10,7 +10,7 @@ class TagsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.tags_activity)
+        setContentView(R.layout.activity_tags)
 
         setSupportActionBar(findViewById(R.id.tags_toolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

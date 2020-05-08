@@ -56,7 +56,7 @@ class TagRecyclerAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagRecyclerHolder {
         return TagRecyclerHolder(
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.layout_tag_view, parent, false),
+                .inflate(R.layout.layout_tag, parent, false),
             this
         )
     }
