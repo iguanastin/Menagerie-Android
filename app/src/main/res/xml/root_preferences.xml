@@ -23,7 +23,7 @@
             app:key="lock-app"
             app:title="Lock app"
             app:defaultValue="false"
-            app:summaryOn="Will require biometric or pattern/code to open Menagerie"
+            app:summaryOn="Require biometric or pattern/code to open Menagerie"
             app:summaryOff="No authentication required to open Menagerie" />
     </PreferenceCategory>
 
