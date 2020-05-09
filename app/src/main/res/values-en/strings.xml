@@ -9,4 +9,5 @@
     <string name="cd_preview_of_item_image">preview of item image</string>
     <string name="cd_group_icon">group icon</string>
     <string name="cd_video_icon">video icon</string>
+    <string name="item_info_title">Item Info</string>
 </resources>

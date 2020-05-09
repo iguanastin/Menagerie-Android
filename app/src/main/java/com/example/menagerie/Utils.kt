@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Resources
+import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.inputmethod.EditorInfo
@@ -12,6 +13,7 @@ import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.marginBottom
 import java.io.File
 import java.text.DecimalFormat
 import java.util.*
@@ -269,4 +271,16 @@ fun Activity.requirePermissions(
     } else {
         success()
     }
+}
+
+fun View.pixelsToDP(pixels: Int): Int {
+    return pixelsToDP(resources, pixels)
+}
+
+fun Activity.pixelsToDP(pixels: Int): Int {
+    return pixelsToDP(resources, pixels)
+}
+
+fun pixelsToDP(resources: Resources, pixels: Int): Int {
+    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixels.toFloat(), resources.displayMetrics).toInt()
 }

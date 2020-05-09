@@ -26,4 +26,5 @@
     <string name="cd_group_icon">group icon</string>
     <string name="cd_video_icon">video icon</string>
     <string name="tags_activity_label">Tags</string>
+    <string name="item_info_title">Item Info</string>
 </resources>

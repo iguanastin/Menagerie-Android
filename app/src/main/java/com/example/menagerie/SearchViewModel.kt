@@ -23,9 +23,12 @@ class SearchViewModel : ViewModel() {
     val thumbnailCache: MutableMap<Int, Drawable> = ConcurrentHashMap<Int, Drawable>()
 
     val pageData: MutableLiveData<List<JSONObject>> = MutableLiveData()
+    val tagData: MutableLiveData<List<Tag>> = MutableLiveData()
 
     override fun onCleared() {
         thumbnailCache.clear()
+        pageData.value = null
+        tagData.value = null
 
         super.onCleared()
     }

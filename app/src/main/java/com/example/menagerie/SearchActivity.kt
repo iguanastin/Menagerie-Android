@@ -15,6 +15,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import android.widget.MultiAutoCompleteTextView.Tokenizer
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -27,6 +28,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import java.io.IOException
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 const val DEFAULT_CACHE_SIZE: Int = 128
@@ -39,7 +42,7 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var gridProgress: ProgressBar
     private lateinit var gridErrorText: TextView
     private lateinit var gridErrorIcon: ImageView
-    private lateinit var searchText: EditText
+    private lateinit var searchText: MultiAutoCompleteTextView
     private lateinit var searchButton: Button
 
     private lateinit var model: SearchViewModel
@@ -75,7 +78,11 @@ class SearchActivity : AppCompatActivity() {
         // Initialize views
         initializeViews()
 
-        handleLockAndStart()
+        if (model.pageData.value == null) {
+            handleLockAndStart()
+        } else {
+            populateGrid(model.pageData.value!!)
+        }
     }
 
     private fun handleLockAndStart() {
@@ -158,9 +165,11 @@ class SearchActivity : AppCompatActivity() {
             showGridStatus(progress = true)
 
             APIClient.requestTags(success = { _, tags ->
+                APIClient.tagCache.clear()
                 for (tag in tags) {
                     APIClient.tagCache[tag.id] = tag
                 }
+                model.tagData.postValue(tags)
 
                 APIClient.requestSearch(
                     terms = searchText.text.toString(),
@@ -275,13 +284,41 @@ class SearchActivity : AppCompatActivity() {
         searchText.onSubmit {
             searchButton.performClick()
         }
+        searchText.setTokenizer(object: Tokenizer { // TODO this shit's fucked
+            override fun findTokenEnd(text: CharSequence, cursor: Int): Int {
+                var index = text.indexOf(' ', cursor + 1)
+                if (index < 0) index = text.length
+                return index
+            }
+
+            override fun findTokenStart(text: CharSequence, cursor: Int): Int {
+                for (i in cursor-1 downTo 0) {
+                    if (text[i] == ' ') return i
+                }
+
+                return 0
+            }
+
+            override fun terminateToken(text: CharSequence): CharSequence {
+//                return if (text.endsWith(' ')) text else ("$text ")
+                return text
+            }
+
+        })
+        model.tagData.observe(this, androidx.lifecycle.Observer { tags ->
+            if (tags != null) {
+                runOnUiThread {
+                    searchText.setAdapter(ArrayAdapter(
+                        this,
+                        android.R.layout.simple_dropdown_item_1line,
+                        tags.toTypedArray()
+                    ).apply { sort(compareBy { tag: Tag -> tag.name }) })
+                }
+            }
+        })
 
         grid.onGlobalLayout {
-            val span = grid.width / TypedValue.applyDimension(
-                TypedValue.COMPLEX_UNIT_DIP,
-                PREFERRED_THUMBNAIL_SIZE_DP.toFloat(),
-                resources.displayMetrics
-            ).toInt()
+            val span = grid.width / pixelsToDP(PREFERRED_THUMBNAIL_SIZE_DP)
             thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, model, span)
 
             grid.apply {
