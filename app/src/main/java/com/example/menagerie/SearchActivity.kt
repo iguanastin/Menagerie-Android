@@ -12,7 +12,6 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
@@ -344,7 +343,7 @@ class SearchActivity : AppCompatActivity() {
         })
 
         grid.onGlobalLayout {
-            val span = grid.width / pixelsToDP(PREFERRED_THUMBNAIL_SIZE_DP)
+            val span = grid.width / dpToPixels(PREFERRED_THUMBNAIL_SIZE_DP)
             thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, model, span)
 
             grid.apply {
@@ -536,17 +535,21 @@ class SearchActivity : AppCompatActivity() {
 
     fun choosePageIndex(@Suppress("UNUSED_PARAMETER") view: View) {
         val builder = AlertDialog.Builder(this)
-        val text = EditText(builder.context).apply {
-            setText((model.page.value!! + 1).toString())
-            inputType = InputType.TYPE_NUMBER_FLAG_SIGNED
+        val spinner = NumberPicker(builder.context).apply {
+            minValue = 1
+            maxValue = model.search.value!!.pages
+            value = model.page.value!! + 1
+            wrapSelectorWheel = false
         }
+
         val listener = DialogInterface.OnClickListener { _, which ->
             if (which == AlertDialog.BUTTON_POSITIVE) {
-                val page = (text.text.toString().toInt() - 1).coerceIn(0, model.search.value!!.pages - 1)
+                val page = (spinner.value - 1).coerceIn(0, model.search.value!!.pages - 1)
                 search(model.search.value!!, page)
             }
         }
-        builder.setView(text).setNegativeButton("Cancel", listener)
+
+        builder.setView(spinner).setNegativeButton("Cancel", listener)
             .setPositiveButton("Go", listener).create().show()
     }
 

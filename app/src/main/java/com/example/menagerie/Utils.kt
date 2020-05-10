@@ -272,14 +272,14 @@ fun Activity.requirePermissions(
     }
 }
 
-fun View.pixelsToDP(pixels: Int): Int {
-    return pixelsToDP(resources, pixels)
+fun View.dpToPixels(pixels: Int): Int {
+    return dpToPixels(resources, pixels)
 }
 
-fun Activity.pixelsToDP(pixels: Int): Int {
-    return pixelsToDP(resources, pixels)
+fun Activity.dpToPixels(pixels: Int): Int {
+    return dpToPixels(resources, pixels)
 }
 
-fun pixelsToDP(resources: Resources, pixels: Int): Int {
+fun dpToPixels(resources: Resources, pixels: Int): Int {
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixels.toFloat(), resources.displayMetrics).toInt()
 }
