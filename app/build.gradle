@@ -56,4 +56,5 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-common-java8:$lifecycle_version"
 
     implementation "androidx.biometric:biometric:1.0.1"
+    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.0.0'
 }

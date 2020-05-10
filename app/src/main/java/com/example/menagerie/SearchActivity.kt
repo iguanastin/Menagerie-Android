@@ -25,6 +25,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import org.json.JSONObject
 import java.io.IOException
 import kotlin.collections.ArrayList
@@ -37,11 +38,11 @@ const val PREFERRED_THUMBNAIL_SIZE_DP: Int = 125
 class SearchActivity : AppCompatActivity() {
 
     private lateinit var grid: RecyclerView
-    private lateinit var gridProgress: ProgressBar
     private lateinit var gridErrorText: TextView
     private lateinit var gridErrorIcon: ImageView
     private lateinit var searchText: MultiAutoCompleteTextView
     private lateinit var searchButton: Button
+    private lateinit var swipeRefresher: SwipeRefreshLayout
 
     private lateinit var model: SearchViewModel
 
@@ -159,6 +160,7 @@ class SearchActivity : AppCompatActivity() {
     private fun performSearch() {
         model.pageData.value = emptyList()
         hideKeyboard(searchText)
+        grid.scrollToPosition(0)
 
         if (APIClient.isAddressValid(APIClient.address)) {
             showGridStatus(progress = true)
@@ -240,13 +242,15 @@ class SearchActivity : AppCompatActivity() {
      */
     private fun initializeViews() {
         grid = findViewById(R.id.grid)
-        gridProgress = findViewById(R.id.gridProgress)
         gridErrorText = findViewById(R.id.gridErrorText)
         searchText = findViewById(R.id.searchText)
         searchButton = findViewById(R.id.searchButton)
         gridErrorIcon = findViewById(R.id.gridErrorIcon)
+        swipeRefresher = findViewById(R.id.searchSwipeRefresh)
 
         setSupportActionBar(findViewById(R.id.searchToolbar))
+
+        swipeRefresher.setOnRefreshListener { searchButton.performClick() }
 
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
@@ -261,7 +265,7 @@ class SearchActivity : AppCompatActivity() {
         error: Boolean = false,
         errorMessage: String? = null
     ) {
-        gridProgress.visibility = if (progress) View.VISIBLE else View.GONE
+        swipeRefresher.isRefreshing = progress
 
         gridErrorText.visibility = if (error) View.VISIBLE else View.GONE
         gridErrorIcon.visibility = if (error) View.VISIBLE else View.GONE

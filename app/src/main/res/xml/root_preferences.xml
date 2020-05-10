@@ -31,7 +31,7 @@
         <SeekBarPreference
             app:key="cache-size"
             app:title="Cache size (in MB)"
-            app:summary="Requires restart for changes to take effect"
+            app:summary="Maximum space to allocate for thumbnail/image cache"
             app:min="16"
             app:defaultValue="128"
             android:max="1024"
