@@ -27,7 +27,7 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import kotlin.collections.ArrayList
+import okio.IOException
 
 
 const val DEFAULT_CACHE_SIZE: Int = 128
@@ -161,7 +161,12 @@ class SearchActivity : AppCompatActivity() {
         )
     }
 
-    private fun search(search: ItemSearch, page: Int = 0) {
+    private fun search(
+        search: ItemSearch,
+        page: Int = 0,
+        success: (() -> Unit)? = null,
+        failure: ((e: IOException?) -> Unit)? = null
+    ) {
         model.pageData.value = emptyList()
         model.page.value = page
         model.search.value = search
@@ -180,6 +185,8 @@ class SearchActivity : AppCompatActivity() {
 
                 search.request(page, success = { search, items ->
                     displaySearchResults(items, page, search.pages)
+
+                    success?.invoke()
                 }, failure = { _, e ->
                     e?.printStackTrace()
                     runOnUiThread {
@@ -188,6 +195,8 @@ class SearchActivity : AppCompatActivity() {
                             errorMessage = "Failed to connect to:\n${APIClient.address}"
                         )
                     }
+
+                    failure?.invoke(e)
                 })
             }, failure = { e ->
                 e?.printStackTrace()
@@ -397,11 +406,8 @@ class SearchActivity : AppCompatActivity() {
                 val address = preferences.getString("preferred-address", null)
                 if (APIClient.isAddressValid(address)) {
                     APIClient.address = address
-                    model.pageData.value = ArrayList()
 
-                    showGridStatus(progress = true)
-
-                    search(model.search.value!!, model.page.value!!)
+                    search(ItemSearch())
                 } else {
                     model.pageData.value = ArrayList()
                     showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
@@ -491,7 +497,16 @@ class SearchActivity : AppCompatActivity() {
      * Called when the user submits a search
      */
     @Suppress("UNUSED_PARAMETER")
-    fun onSearchSubmit(view: View) {
+    fun searchSubmit(view: View) {
+        // Push previous search and state onto stack
+        model.searchStack.push(
+            SearchState(
+                model.search.value!!,
+                model.page.value!!,
+                (grid.layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()
+            )
+        )
+
         // TODO descending, ungroup
         search(ItemSearch(searchText.text.toString()))
     }
@@ -518,11 +533,18 @@ class SearchActivity : AppCompatActivity() {
     }
 
     override fun onBackPressed() {
-        if (searchText.text.isNullOrEmpty()) {
+        if (model.searchStack.empty()) {
             super.onBackPressed()
         } else {
-            searchText.text = null
-            searchButton.performClick()
+            val state: SearchState = model.searchStack.pop()
+            searchText.setText(state.search.terms)
+            searchText.setSelection(searchText.text.length)
+
+            search(state.search, state.page, success = {
+                runOnUiThread {
+                    grid.scrollToPosition(state.lastVisiblePosition)
+                }
+            })
         }
     }
 

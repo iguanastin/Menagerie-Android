@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:onClick="onSearchSubmit"
+        android:onClick="searchSubmit"
         android:text="@android:string/search_go"
         app:layout_constraintBaseline_toBaselineOf="@+id/searchText"
         app:layout_constraintEnd_toEndOf="parent"
