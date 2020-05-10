@@ -11,5 +11,11 @@ enum class Codes {
 }
 
 const val UNKNOWN_SEARCH_TOTAL = -1
+const val UNKNOWN_PAGE_SIZE = -1
+const val UNKNOWN_PAGE_COUNT = -1
+
+const val PREVIEW_INDEX_IN_PAGE_EXTRA_ID = "com.example.menagerie.preview_index_in_page_extra"
+const val PREVIEW_PAGE_EXTRA_ID = "com.example.menagerie.preview_page_extra"
 const val PREVIEW_ITEM_EXTRA_ID = "com.example.menagerie.preview_item_extra"
+const val PREVIEW_SEARCH_EXTRA_ID = "com.example.menagerie.preview_search_extra"
 const val TAGS_LIST_TAG_EXTRA_ID = "com.example.menagerie.tags_list_tag_extra"

@@ -1,6 +1,7 @@
 package com.example.menagerie
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaScannerConnection
@@ -26,8 +27,12 @@ class PreviewActivity : AppCompatActivity() {
 
     private lateinit var imagePreview: ImageView
     private lateinit var videoPreview: VideoView
+    private lateinit var indexTextView: TextView
 
     private var item: Item? = null
+    private var search: ItemSearch? = null
+    private var page: Int = -1
+    private var indexInPage: Int = -1
 
     private var videoPosition: Int = 0
 
@@ -37,14 +42,20 @@ class PreviewActivity : AppCompatActivity() {
         setContentView(R.layout.activity_preview)
 
         item = intent.getParcelableExtra(PREVIEW_ITEM_EXTRA_ID)
-        if (item == null) {
-            simpleAlert(this, message = "Failed to get Item") {
+        search = intent.getParcelableExtra(PREVIEW_SEARCH_EXTRA_ID)
+        page = intent.getIntExtra(PREVIEW_PAGE_EXTRA_ID, -1)
+        indexInPage = intent.getIntExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, -1)
+        if (item == null || search == null || page < 0 || indexInPage < 0) {
+            simpleAlert(this, message = "Invalid data") {
                 finish()
             }
         }
 
         imagePreview = findViewById(R.id.previewImageView)
         videoPreview = findViewById(R.id.previewVideoView)
+        indexTextView = findViewById(R.id.previewIndexTextView)
+
+        indexTextView.text = "0/0"
 
         setSupportActionBar(findViewById(R.id.previewToolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -53,11 +64,12 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     private fun initializePreview() {
-        if (item == null) return
-
-        findViewById<TextView>(R.id.previewIndexTextView).text = "0/0"
-
         title = item?.id.toString()
+
+        val index = page * search!!.pageSize + indexInPage
+        val total = search!!.total
+        @SuppressLint("SetTextI18n")
+        indexTextView.text = "$index/$total"
 
         when (item!!.type) {
             Item.IMAGE_TYPE -> {

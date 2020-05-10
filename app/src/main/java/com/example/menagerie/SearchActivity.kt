@@ -1,6 +1,7 @@
 package com.example.menagerie
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.KeyguardManager
 import android.content.Context
@@ -9,7 +10,6 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.OpenableColumns
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
@@ -27,8 +27,6 @@ import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import org.json.JSONObject
-import java.io.IOException
 import kotlin.collections.ArrayList
 
 
@@ -44,6 +42,7 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var searchText: MultiAutoCompleteTextView
     private lateinit var searchButton: Button
     private lateinit var swipeRefresher: SwipeRefreshLayout
+    private lateinit var pageIndexText: TextView
 
     private lateinit var model: SearchViewModel
 
@@ -81,7 +80,11 @@ class SearchActivity : AppCompatActivity() {
         if (model.pageData.value == null) {
             handleLockAndStart()
         } else {
-            populateGrid(model.pageData.value!!)
+            displaySearchResults(
+                model.pageData.value!!,
+                model.page.value!!,
+                model.search.value!!.pages
+            )
         }
     }
 
@@ -99,12 +102,12 @@ class SearchActivity : AppCompatActivity() {
                     promptKeyguardAuth(km)
                 } else {
                     simpleAlert(this, message = "No pass code or pattern is set") {
-                        performSearch()
+                        search(ItemSearch())
                     }
                 }
             }
         } else {
-            performSearch()
+            search(ItemSearch())
         }
     }
 
@@ -145,7 +148,7 @@ class SearchActivity : AppCompatActivity() {
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                performSearch()
+                search(ItemSearch())
             }
         }
 
@@ -158,8 +161,10 @@ class SearchActivity : AppCompatActivity() {
         )
     }
 
-    private fun performSearch() {
+    private fun search(search: ItemSearch, page: Int = 0) {
         model.pageData.value = emptyList()
+        model.page.value = page
+        model.search.value = search
         hideKeyboard(searchText)
         grid.scrollToPosition(0)
 
@@ -173,22 +178,17 @@ class SearchActivity : AppCompatActivity() {
                 }
                 model.tagData.postValue(tags)
 
-                APIClient.requestSearch(
-                    terms = searchText.text.toString(),
-                    failure = { e: IOException? ->
-                        e?.printStackTrace()
-                        runOnUiThread {
-                            showGridStatus(
-                                error = true,
-                                errorMessage = "Failed to connect to:\n${APIClient.address}"
-                            )
-                        }
-                    },
-                    success = { items, total ->
-                        runOnUiThread {
-                            populateGrid(items)
-                        }
-                    })
+                search.request(page, success = { search, items ->
+                    displaySearchResults(items, page, search.pages)
+                }, failure = { _, e ->
+                    e?.printStackTrace()
+                    runOnUiThread {
+                        showGridStatus(
+                            error = true,
+                            errorMessage = "Failed to connect to:\n${APIClient.address}"
+                        )
+                    }
+                })
             }, failure = { e ->
                 e?.printStackTrace()
                 runOnUiThread {
@@ -248,6 +248,7 @@ class SearchActivity : AppCompatActivity() {
         searchButton = findViewById(R.id.searchButton)
         gridErrorIcon = findViewById(R.id.gridErrorIcon)
         swipeRefresher = findViewById(R.id.searchSwipeRefresh)
+        pageIndexText = findViewById(R.id.pageIndexTextView)
 
         setSupportActionBar(findViewById(R.id.searchToolbar))
 
@@ -297,9 +298,9 @@ class SearchActivity : AppCompatActivity() {
 
             override fun findTokenStart(text: CharSequence, cursor: Int): Int {
                 for (i in cursor - 1 downTo 0) {
-                    if (i == 0 || text[i-1] == ' ') return i
-                    if (i > 0 && text[i-1] == '-' && i-1 == 0) return i
-                    if (i > 1 && text[i-1] == '-' && text[i-2] == ' ') return i
+                    if (i == 0 || text[i - 1] == ' ') return i
+                    if (i > 0 && text[i - 1] == '-' && i - 1 == 0) return i
+                    if (i > 1 && text[i - 1] == '-' && text[i - 2] == ' ') return i
                 }
 
                 return 0
@@ -400,7 +401,7 @@ class SearchActivity : AppCompatActivity() {
 
                     showGridStatus(progress = true)
 
-                    performSearch()
+                    search(model.search.value!!, model.page.value!!)
                 } else {
                     model.pageData.value = ArrayList()
                     showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
@@ -408,7 +409,7 @@ class SearchActivity : AppCompatActivity() {
             }
             Codes.search_activity_result_authenticate.ordinal -> {
                 if (resultCode == RESULT_OK) {
-                    performSearch()
+                    search(ItemSearch())
                 } else {
                     simpleAlert(this, message = "Unable to authenticate") {
                         finish()
@@ -491,13 +492,18 @@ class SearchActivity : AppCompatActivity() {
      */
     @Suppress("UNUSED_PARAMETER")
     fun onSearchSubmit(view: View) {
-        performSearch()
+        // TODO descending, ungroup
+        search(ItemSearch(searchText.text.toString()))
     }
 
-    private fun populateGrid(newData: List<Item>) {
-        model.pageData.postValue(newData)
+    @SuppressLint("SetTextI18n")
+    private fun displaySearchResults(newData: List<Item>, page: Int, totalPages: Int) {
+        runOnUiThread {
+            model.pageData.value = newData
 
-        runOnUiThread { showGridStatus(progress = false, error = false) }
+            pageIndexText.text = "$page/$totalPages"
+            showGridStatus(progress = false, error = false)
+        }
     }
 
     /**

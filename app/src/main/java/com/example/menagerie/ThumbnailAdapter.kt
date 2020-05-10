@@ -81,6 +81,9 @@ class ThumbnailAdapter (
             if (item.type in arrayOf("image", "video")) {
                 activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
                     putExtra(PREVIEW_ITEM_EXTRA_ID, item)
+                    putExtra(PREVIEW_SEARCH_EXTRA_ID, model.search.value)
+                    putExtra(PREVIEW_PAGE_EXTRA_ID, model.page.value)
+                    putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, position)
                 })
             }
             // TODO extract this into a callback

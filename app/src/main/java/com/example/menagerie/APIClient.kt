@@ -58,7 +58,7 @@ object APIClient {
         page: Int = 0,
         descending: Boolean = true,
         ungroup: Boolean = false,
-        success: ((data: List<Item>, total: Int) -> Unit)? = null,
+        success: ((data: List<Item>, total: Int, pageSize: Int, pageCount: Int) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ) {
         var url = "$address/search?page=$page&terms=" + URLEncoder.encode(terms, "UTF-8")
@@ -90,7 +90,7 @@ object APIClient {
                                 }
                             }
 
-                            success?.invoke(data, root.getInt("total"))
+                            success?.invoke(data, root.getInt("total"), root.getInt("page_size"), root.getInt("page_count"))
                         } else {
                             failure?.invoke(null)
                         }
