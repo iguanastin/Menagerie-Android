@@ -27,7 +27,7 @@ class TagsActivity : AppCompatActivity() {
                     val recycler = findViewById<RecyclerView>(R.id.tags_recycler_view)
                     recycler.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
                     recycler.adapter = TagRecyclerAdapter(tags, onLongClick = { tag ->
-                        setResult(RESULT_OK, Intent().apply { putExtra(TAGS_LIST_TAG_EXTRA_ID, tag.name) })
+                        setResult(RESULT_OK, Intent().apply { putExtra(TAG_NAME_EXTRA_ID, tag.name) })
                         finish()
                     })
                     recycler.adapter?.notifyDataSetChanged()

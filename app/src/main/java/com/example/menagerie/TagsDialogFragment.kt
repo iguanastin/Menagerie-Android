@@ -13,7 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
-class TagsDialogFragment(val item: Item) : BottomSheetDialogFragment() {
+class TagsDialogFragment(val item: Item, val onClick: ((tag: Tag) -> Unit)? = null) : BottomSheetDialogFragment() {
 
 
     override fun onCreateView(
@@ -46,6 +46,8 @@ class TagsDialogFragment(val item: Item) : BottomSheetDialogFragment() {
 
         recycler.adapter = TagRecyclerAdapter(item.tags, onRemoveTag = {
             simpleAlert(requireContext(), message = "Not yet implemented")
+        }, onClick = { tag ->
+            onClick?.invoke(tag)
         })
         recycler.layoutManager = LinearLayoutManager(context)
 

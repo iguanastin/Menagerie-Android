@@ -216,7 +216,10 @@ class PreviewActivity : AppCompatActivity() {
     }
 
     fun tagsButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
-        TagsDialogFragment(item!!).show(supportFragmentManager, null)
+        TagsDialogFragment(item!!, onClick = { tag ->
+            setResult(RESULT_OK, Intent().apply { putExtra(TAG_NAME_EXTRA_ID, tag.name) })
+            finish()
+        }).show(supportFragmentManager, null)
     }
 
     fun infoButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {

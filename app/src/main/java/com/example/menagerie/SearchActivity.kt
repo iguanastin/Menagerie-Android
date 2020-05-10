@@ -416,9 +416,9 @@ class SearchActivity : AppCompatActivity() {
                     }
                 }
             }
-            Codes.search_activity_result_tags_list_search_tag.ordinal -> {
+            Codes.search_activity_result_tags_list_search_tag.ordinal, Codes.preview_activity_result_search_tag.ordinal -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    searchText.setText(data?.getStringExtra(TAGS_LIST_TAG_EXTRA_ID))
+                    searchText.setText(data?.getStringExtra(TAG_NAME_EXTRA_ID))
                     searchText.setSelection(searchText.text.length)
                     searchText.requestFocus()
                     searchButton.performClick()
