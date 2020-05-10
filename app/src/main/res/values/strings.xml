@@ -27,4 +27,8 @@
     <string name="cd_video_icon">video icon</string>
     <string name="tags_activity_label">Tags</string>
     <string name="item_info_title">Item Info</string>
+    <string name="toolbar_download">Download</string>
+    <string name="toolbar_share">Share</string>
+    <string name="toolbar_forget">Forget</string>
+    <string name="toolbar_delete">Delete</string>
 </resources>

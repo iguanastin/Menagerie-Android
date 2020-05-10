@@ -9,6 +9,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
@@ -16,11 +17,9 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import android.widget.MultiAutoCompleteTextView.Tokenizer
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
@@ -28,7 +27,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import org.json.JSONObject
 import java.io.IOException
-import java.util.*
 import kotlin.collections.ArrayList
 
 
@@ -294,15 +292,17 @@ class SearchActivity : AppCompatActivity() {
 
             override fun findTokenStart(text: CharSequence, cursor: Int): Int {
                 for (i in cursor - 1 downTo 0) {
-                    if (text[i] == ' ') return i // TODO make " -" a token edge as well as "^-"
+                    if (i == 0 || text[i-1] == ' ') return i
+                    if (i > 0 && text[i-1] == '-' && i-1 == 0) return i
+                    if (i > 1 && text[i-1] == '-' && text[i-2] == ' ') return i
                 }
 
                 return 0
             }
 
             override fun terminateToken(text: CharSequence): CharSequence {
-//                return if (text.endsWith(' ')) text else ("$text ")
-                return text
+                return if (text.endsWith(' ')) text else ("$text ")
+//                return text
             }
 
         })
@@ -425,9 +425,14 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun uploadContent(uri: Uri) {
-        APIClient.uploadContent(
-            contentResolver.openInputStream(uri)!!,
-            contentResolver.getType(uri)!!,
+        // TODO make upload progress
+
+        APIClient.importContent(
+            uri, contentResolver,
+            success = {
+                // TODO Track import status?
+                simpleAlert(this, message = "Successfully uploaded file")
+            },
             failure = {
                 simpleAlert(this, "Failed to upload", "Unable to connect", "Ok") {}
             })
@@ -499,6 +504,15 @@ class SearchActivity : AppCompatActivity() {
             grid.smoothScrollToPosition(0)
         else
             grid.scrollToPosition(0)
+    }
+
+    override fun onBackPressed() {
+        if (searchText.text.isNullOrEmpty()) {
+            super.onBackPressed()
+        } else {
+            searchText.text = null
+            searchButton.performClick()
+        }
     }
 
 }

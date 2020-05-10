@@ -24,7 +24,6 @@ class Item(
         const val VIDEO_TYPE = "video"
         const val IMAGE_TYPE = "image"
         const val GROUP_TYPE = "group"
-        const val UNKNOWN_TYPE = "unknown"
 
         override fun createFromParcel(parcel: Parcel): Item {
             return Item(parcel)

@@ -5,29 +5,23 @@
     <item
         android:id="@+id/toolbar_download"
         android:icon="@drawable/ic_file_download_white_24dp"
-        android:title="Download"
-        app:showAsAction="ifRoom" />
-
-    <item
-        android:id="@+id/toolbar_edit"
-        android:icon="@drawable/ic_edit_white_24dp"
-        android:title="Edit"
+        android:title="@string/toolbar_download"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/toolbar_share"
         android:icon="@drawable/ic_share_white_24dp"
-        android:title="Share"
+        android:title="@string/toolbar_share"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/toolbar_forget"
-        android:title="Forget"
+        android:title="@string/toolbar_forget"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/toolbar_delete"
-        android:title="Delete"
+        android:title="@string/toolbar_delete"
         app:showAsAction="never" />
 
 </menu>

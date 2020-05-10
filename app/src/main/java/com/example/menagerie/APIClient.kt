@@ -1,16 +1,14 @@
 package com.example.menagerie
 
-import android.content.Intent
+import android.content.ContentResolver
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
-import android.webkit.MimeTypeMap
-import okhttp3.Call
-import okhttp3.Callback
+import android.net.Uri
+import android.provider.OpenableColumns
+import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import okhttp3.Response
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -138,16 +136,31 @@ object APIClient {
         return call
     }
 
-    fun uploadContent(
-        stream: InputStream,
-        mime: String,
+    fun importContent(
+        uri: Uri,
+        contentResolver: ContentResolver,
         success: ((code: Int) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ): Call {
-        val filename: String = URLEncoder.encode(
-            System.currentTimeMillis().toString() + "." + MimeTypeMap.getSingleton()
-                .getExtensionFromMimeType(mime), "UTF-8"
-        ) // TODO get better filename
+        val stream = contentResolver.openInputStream(uri)!!
+        val mime = contentResolver.getType(uri)!!
+
+        var filename: String? = null
+        if (uri.scheme == "content") {
+            contentResolver.query(uri, null, null, null, null)!!.use {c ->
+                if (c.moveToFirst()) {
+                    filename = c.getString(c.getColumnIndex(OpenableColumns.DISPLAY_NAME))
+                }
+            }
+        }
+        if (filename == null) {
+            filename = uri.path
+            val cut = filename!!.lastIndexOf('/')
+            if (cut != -1) {
+                filename = filename!!.substring(cut + 1)
+            }
+        }
+        filename = URLEncoder.encode(filename, "UTF-8")
         val url = "$address/upload?filename=$filename"
 
         val bytes: ByteArray = stream.readBytes() // TODO stream request body instead of copying

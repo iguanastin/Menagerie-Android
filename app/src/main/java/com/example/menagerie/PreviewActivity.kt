@@ -70,11 +70,8 @@ class PreviewActivity : AppCompatActivity() {
                 // TODO display some group thumbnails and title
                 // TODO allow user to open group
             }
-            Item.UNKNOWN_TYPE -> {
-                // TODO display notice and filename of unknown type
-            }
             else -> {
-                // TODO display error message
+                // TODO display notice and filename of unknown type
             }
         }
     }
@@ -161,14 +158,6 @@ class PreviewActivity : AppCompatActivity() {
                 ) {
                     download()
                 }
-                true
-            }
-            R.id.toolbar_edit -> {
-                // TODO
-                simpleAlert(
-                    this,
-                    message = "This feature is not yet implemented"
-                )
                 true
             }
             R.id.toolbar_share -> {

@@ -82,7 +82,7 @@ class ThumbnailAdapter (
                     putExtra(PREVIEW_ITEM_EXTRA_ID, Item.fromJson(pageData!![position]))
                 })
             }
-            // TODO
+            // TODO extract this into a callback
         }
 
         if (holder.imageView.drawable == null) {
