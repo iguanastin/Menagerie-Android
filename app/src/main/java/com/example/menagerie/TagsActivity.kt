@@ -1,5 +1,6 @@
 package com.example.menagerie
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -25,7 +26,10 @@ class TagsActivity : AppCompatActivity() {
                 runOnUiThread {
                     val recycler = findViewById<RecyclerView>(R.id.tags_recycler_view)
                     recycler.layoutManager = LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false)
-                    recycler.adapter = TagRecyclerAdapter(tags)
+                    recycler.adapter = TagRecyclerAdapter(tags, onLongClick = { tag ->
+                        setResult(RESULT_OK, Intent().apply { putExtra(TAGS_LIST_TAG_EXTRA_ID, tag.name) })
+                        finish()
+                    })
                     recycler.adapter?.notifyDataSetChanged()
                 }
             })

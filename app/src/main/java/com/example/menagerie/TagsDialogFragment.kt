@@ -44,7 +44,9 @@ class TagsDialogFragment(val item: Item) : BottomSheetDialogFragment() {
             }
         }
 
-        recycler.adapter = TagRecyclerAdapter(item.tags)
+        recycler.adapter = TagRecyclerAdapter(item.tags, onRemoveTag = {
+            simpleAlert(requireContext(), message = "Not yet implemented")
+        })
         recycler.layoutManager = LinearLayoutManager(context)
 
         return view

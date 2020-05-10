@@ -12,7 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 class TagRecyclerAdapter(
     tags: List<Tag>,
     sort: Sort = Sort.Name,
-    private val onRemoveTag: ((Tag) -> Unit)? = null
+    private val onRemoveTag: ((Tag) -> Unit)? = null,
+    private val onClick: ((Tag) -> Unit)? = null,
+    private val onLongClick: ((Tag) -> Unit)? = null
 ) :
     RecyclerView.Adapter<TagRecyclerAdapter.TagRecyclerHolder>() {
 
@@ -37,7 +39,8 @@ class TagRecyclerAdapter(
 
     class TagRecyclerHolder(view: View, private val adapter: TagRecyclerAdapter) :
         RecyclerView.ViewHolder(view) {
-        val textView: TextView = view.findViewById(R.id.tagNameTextView)
+        val nameView: TextView = view.findViewById(R.id.tagNameTextView)
+        val freqView: TextView = view.findViewById(R.id.tagFrequencyTextView)
         var tag: Tag? = null
 
         init {
@@ -45,10 +48,18 @@ class TagRecyclerAdapter(
 
             if (adapter.onRemoveTag != null) {
                 removeButton.setOnClickListener {
-                    (adapter.onRemoveTag)(tag!!)
+                    adapter.onRemoveTag.invoke(tag!!)
                 }
             } else {
                 removeButton.visibility = View.GONE
+            }
+
+            if (adapter.onClick != null) view.setOnClickListener {
+                adapter.onClick.invoke(tag!!)
+            }
+            if (adapter.onLongClick != null) view.setOnLongClickListener {
+                adapter.onLongClick.invoke(tag!!)
+                true
             }
         }
     }
@@ -63,13 +74,15 @@ class TagRecyclerAdapter(
 
     override fun onBindViewHolder(holder: TagRecyclerHolder, position: Int) {
         holder.tag = tags[position]
-        holder.textView.text = holder.tag!!.name
+        holder.nameView.text = holder.tag!!.name
         val color = holder.tag!!.color
 
-        holder.textView.setTextColor(Color.WHITE)
+        holder.freqView.text = holder.tag!!.frequency.toString()
+
+        holder.nameView.setTextColor(Color.WHITE)
         if (!color.isNullOrEmpty()) {
             try {
-                holder.textView.setTextColor(
+                holder.nameView.setTextColor(
                     Color.parseColor(
                         cssColorMap.getOrDefault(
                             color,

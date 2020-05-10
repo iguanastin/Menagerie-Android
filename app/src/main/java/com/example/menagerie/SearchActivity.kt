@@ -160,6 +160,7 @@ class SearchActivity : AppCompatActivity() {
 
     private fun performSearch() {
         model.pageData.value = emptyList()
+        hideKeyboard(searchText)
 
         if (APIClient.isAddressValid(APIClient.address)) {
             showGridStatus(progress = true)
@@ -284,7 +285,7 @@ class SearchActivity : AppCompatActivity() {
         searchText.onSubmit {
             searchButton.performClick()
         }
-        searchText.setTokenizer(object: Tokenizer { // TODO this shit's fucked
+        searchText.setTokenizer(object : Tokenizer {
             override fun findTokenEnd(text: CharSequence, cursor: Int): Int {
                 var index = text.indexOf(' ', cursor + 1)
                 if (index < 0) index = text.length
@@ -292,8 +293,8 @@ class SearchActivity : AppCompatActivity() {
             }
 
             override fun findTokenStart(text: CharSequence, cursor: Int): Int {
-                for (i in cursor-1 downTo 0) {
-                    if (text[i] == ' ') return i
+                for (i in cursor - 1 downTo 0) {
+                    if (text[i] == ' ') return i // TODO make " -" a token edge as well as "^-"
                 }
 
                 return 0
@@ -307,12 +308,19 @@ class SearchActivity : AppCompatActivity() {
         })
         model.tagData.observe(this, androidx.lifecycle.Observer { tags ->
             if (tags != null) {
+                val tagNames = mutableListOf<String>()
+                tags.sortedByDescending { tag -> tag.frequency }.forEach(action = { tag ->
+                    tagNames.add(tag.name)
+                })
+
                 runOnUiThread {
-                    searchText.setAdapter(ArrayAdapter(
-                        this,
-                        android.R.layout.simple_dropdown_item_1line,
-                        tags.toTypedArray()
-                    ).apply { sort(compareBy { tag: Tag -> tag.name }) })
+                    searchText.setAdapter(
+                        ArrayAdapter(
+                            this,
+                            android.R.layout.simple_dropdown_item_1line,
+                            tagNames.toTypedArray()
+                        )
+                    )
                 }
             }
         })
@@ -368,38 +376,51 @@ class SearchActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode == Codes.search_activity_result_pick_file_for_upload.ordinal) {
-            if (resultCode == Activity.RESULT_OK) {
-                if (data != null) {
-                    uploadContent(data.data!!)
+        when (requestCode) {
+            Codes.search_activity_result_pick_file_for_upload.ordinal -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    if (data != null) {
+                        uploadContent(data.data!!)
+                    }
                 }
             }
-        } else if (requestCode == Codes.search_activity_result_settings_closed.ordinal) {
-            ClientManager.cacheSize.value =
-                preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
+            Codes.search_activity_result_settings_closed.ordinal -> {
+                ClientManager.cacheSize.value =
+                    preferences.getInt("cache-size", DEFAULT_CACHE_SIZE).toLong()
 
-            val address = preferences.getString("preferred-address", null)
-            if (APIClient.isAddressValid(address)) {
-                APIClient.address = address
-                model.pageData.value = ArrayList()
+                val address = preferences.getString("preferred-address", null)
+                if (APIClient.isAddressValid(address)) {
+                    APIClient.address = address
+                    model.pageData.value = ArrayList()
 
-                showGridStatus(progress = true)
+                    showGridStatus(progress = true)
 
-                performSearch()
-            } else {
-                model.pageData.value = ArrayList()
-                showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
-            }
-        } else if (requestCode == Codes.search_activity_result_authenticate.ordinal) {
-            if (resultCode == RESULT_OK) {
-                performSearch()
-            } else {
-                simpleAlert(this, message = "Unable to authenticate") {
-                    finish()
+                    performSearch()
+                } else {
+                    model.pageData.value = ArrayList()
+                    showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
                 }
             }
-        } else {
-            println("Unexpected requestCode: $requestCode")
+            Codes.search_activity_result_authenticate.ordinal -> {
+                if (resultCode == RESULT_OK) {
+                    performSearch()
+                } else {
+                    simpleAlert(this, message = "Unable to authenticate") {
+                        finish()
+                    }
+                }
+            }
+            Codes.search_activity_result_tags_list_search_tag.ordinal -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    searchText.setText(data?.getStringExtra(TAGS_LIST_TAG_EXTRA_ID))
+                    searchText.setSelection(searchText.text.length)
+                    searchText.requestFocus()
+                    searchButton.performClick()
+                }
+            }
+            else -> {
+                println("Unexpected requestCode: $requestCode")
+            }
         }
     }
 
@@ -429,7 +450,10 @@ class SearchActivity : AppCompatActivity() {
                 true
             }
             R.id.search_toolbar_tags -> {
-                startActivity(Intent(this, TagsActivity::class.java))
+                startActivityForResult(
+                    Intent(this, TagsActivity::class.java),
+                    Codes.search_activity_result_tags_list_search_tag.ordinal
+                )
                 true
             }
             else -> {
