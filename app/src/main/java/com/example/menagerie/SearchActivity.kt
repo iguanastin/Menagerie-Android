@@ -3,13 +3,16 @@ package com.example.menagerie
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.app.KeyguardManager
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.text.InputType
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.Menu
@@ -497,7 +500,7 @@ class SearchActivity : AppCompatActivity() {
      * Called when the user submits a search
      */
     @Suppress("UNUSED_PARAMETER")
-    fun searchSubmit(view: View) {
+    fun submitSearch(view: View) {
         // Push previous search and state onto stack
         model.searchStack.push(
             SearchState(
@@ -516,7 +519,7 @@ class SearchActivity : AppCompatActivity() {
         runOnUiThread {
             model.pageData.value = newData
 
-            pageIndexText.text = "$page/$totalPages"
+            pageIndexText.text = "${page + 1}/$totalPages"
             showGridStatus(progress = false, error = false)
         }
     }
@@ -524,12 +527,27 @@ class SearchActivity : AppCompatActivity() {
     /**
      * Scrolls the grid to the top
      */
-    @Suppress("UNUSED_PARAMETER")
-    fun toTopOfGrid(view: View) {
+    fun toTopOfGrid(@Suppress("UNUSED_PARAMETER") view: View) {
         if ((grid.layoutManager as GridLayoutManager).findLastVisibleItemPosition() < 100)
             grid.smoothScrollToPosition(0)
         else
             grid.scrollToPosition(0)
+    }
+
+    fun choosePageIndex(@Suppress("UNUSED_PARAMETER") view: View) {
+        val builder = AlertDialog.Builder(this)
+        val text = EditText(builder.context).apply {
+            setText((model.page.value!! + 1).toString())
+            inputType = InputType.TYPE_NUMBER_FLAG_SIGNED
+        }
+        val listener = DialogInterface.OnClickListener { _, which ->
+            if (which == AlertDialog.BUTTON_POSITIVE) {
+                val page = (text.text.toString().toInt() - 1).coerceIn(0, model.search.value!!.pages - 1)
+                search(model.search.value!!, page)
+            }
+        }
+        builder.setView(text).setNegativeButton("Cancel", listener)
+            .setPositiveButton("Go", listener).create().show()
     }
 
     override fun onBackPressed() {

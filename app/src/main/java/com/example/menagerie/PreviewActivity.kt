@@ -66,7 +66,7 @@ class PreviewActivity : AppCompatActivity() {
     private fun initializePreview() {
         title = item?.id.toString()
 
-        val index = page * search!!.pageSize + indexInPage
+        val index = page * search!!.pageSize + indexInPage + 1
         val total = search!!.total
         @SuppressLint("SetTextI18n")
         indexTextView.text = "$index/$total"

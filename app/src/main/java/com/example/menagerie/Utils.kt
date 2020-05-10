@@ -13,7 +13,6 @@ import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.marginBottom
 import java.io.File
 import java.text.DecimalFormat
 import java.util.*
@@ -236,10 +235,10 @@ fun simpleAlert(
     title: String = "Alert",
     message: String,
     button: String = "Ok",
-    onExit: (() -> Unit)? = null
+    onDismiss: (() -> Unit)? = null
 ) {
     AlertDialog.Builder(context).setTitle(title).setMessage(message)
-        .setNeutralButton(button) { _, _ -> if (onExit != null) onExit() }.create().show()
+        .setNeutralButton(button) { _, _ -> onDismiss?.invoke() }.create().show()
 }
 
 fun Activity.requirePermissions(

@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:onClick="searchSubmit"
+        android:onClick="submitSearch"
         android:text="@android:string/search_go"
         app:layout_constraintBaseline_toBaselineOf="@+id/searchText"
         app:layout_constraintEnd_toEndOf="parent"
@@ -101,7 +101,7 @@
         android:id="@+id/gridErrorText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Failed to connect"
+        tools:text="Failed to connect"
         app:layout_constraintBottom_toBottomOf="@+id/searchSwipeRefresh"
         app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
         app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh"
@@ -114,9 +114,10 @@
         android:layout_marginBottom="16dp"
         android:background="@drawable/background_round_rect_32dp"
         android:padding="12dp"
-        android:text="0/0"
+        android:onClick="choosePageIndex"
         app:layout_constraintBottom_toBottomOf="@+id/searchSwipeRefresh"
         app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
-        app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh" />
+        app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh"
+        tools:text="0/0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
