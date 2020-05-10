@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
@@ -183,9 +184,9 @@ class SearchActivity : AppCompatActivity() {
                             )
                         }
                     },
-                    success = { _: Int, list: List<JSONObject> ->
+                    success = { items, total ->
                         runOnUiThread {
-                            populateGrid(list)
+                            populateGrid(items)
                         }
                     })
             }, failure = { e ->
@@ -310,7 +311,7 @@ class SearchActivity : AppCompatActivity() {
             }
 
         })
-        model.tagData.observe(this, androidx.lifecycle.Observer { tags ->
+        model.tagData.observe(this, Observer { tags ->
             if (tags != null) {
                 val tagNames = mutableListOf<String>()
                 tags.sortedByDescending { tag -> tag.frequency }.forEach(action = { tag ->
@@ -493,7 +494,7 @@ class SearchActivity : AppCompatActivity() {
         performSearch()
     }
 
-    private fun populateGrid(newData: List<JSONObject>) {
+    private fun populateGrid(newData: List<Item>) {
         model.pageData.postValue(newData)
 
         runOnUiThread { showGridStatus(progress = false, error = false) }

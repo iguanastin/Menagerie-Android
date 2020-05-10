@@ -10,5 +10,6 @@ enum class Codes {
     search_activity_result_tags_list_search_tag
 }
 
+const val UNKNOWN_SEARCH_TOTAL = -1
 const val PREVIEW_ITEM_EXTRA_ID = "com.example.menagerie.preview_item_extra"
 const val TAGS_LIST_TAG_EXTRA_ID = "com.example.menagerie.tags_list_tag_extra"

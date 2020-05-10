@@ -61,7 +61,7 @@ class PreviewActivity : AppCompatActivity() {
 
         when (item!!.type) {
             Item.IMAGE_TYPE -> {
-                displyImageType(item!!.fileURL!!)
+                displyImageType(APIClient.address + item!!.fileURL!!)
             }
             Item.VIDEO_TYPE -> {
                 displayVideoType(Uri.parse(item!!.fileURL!!))

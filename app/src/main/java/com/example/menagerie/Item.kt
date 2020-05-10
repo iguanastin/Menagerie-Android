@@ -11,10 +11,10 @@ class Item(
     val added: Long,
     val tags: ArrayList<Tag>,
     val md5: String? = null,
-    val filePath: String? = null,
+    var filePath: String? = null,
     val fileURL: String? = null,
-    val title: String? = null,
-    val elements: List<Item>? = null,
+    var title: String? = null,
+    val elements: List<Int>? = null,
     val thumbURL: String? = null
 ) : Parcelable {
 
@@ -50,7 +50,17 @@ class Item(
             val filePath = if (json.has("path")) json.getString("path") else null
             val fileURL = if (json.has("file")) json.getString("file") else null
             val title = if (json.has("title")) json.getString("title") else null
-            val elements = null // TODO elements
+
+            var elements: MutableList<Int>? = null
+            if (json.has("elements")) {
+                elements = ArrayList()
+
+                val arr = json.getJSONArray("elements")
+                for (i in 0 until arr.length()) {
+                    elements.add(arr.getInt(i))
+                }
+            }
+
             val thumbURL = if (json.has("thumbnail")) json.getString("thumbnail") else null
 
             return Item(
@@ -77,9 +87,16 @@ class Item(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.createTypedArrayList(CREATOR),
+        parcel.createIntArray()?.toList(),
         parcel.readString()
     )
+
+    fun updateFromJSON(json: JSONObject): Item {
+        if (json.has("path")) filePath = json.getString("path")
+        if (json.has("title")) title = json.getString("title")
+
+        return this
+    }
 
     override fun equals(other: Any?): Boolean {
         return other is Item && other.id == id
@@ -98,7 +115,7 @@ class Item(
         parcel.writeString(filePath)
         parcel.writeString(fileURL)
         parcel.writeString(title)
-        parcel.writeTypedList(elements)
+        parcel.writeIntArray(elements?.toIntArray())
         parcel.writeString(thumbURL)
     }
 

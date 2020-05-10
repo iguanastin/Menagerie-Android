@@ -23,7 +23,7 @@ class ThumbnailAdapter (
 ) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
-    private var pageData: List<JSONObject>? = null
+    private var pageData: List<Item>? = null
 
     init {
         model.pageData.observe(activity, Observer { data ->
@@ -68,18 +68,19 @@ class ThumbnailAdapter (
             return
         }
 
+        val item = pageData!![position]
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
-        if (pageData!![position].getString("type") == "video") holder.videoIcon.visibility =
+        if (item.type == "video") holder.videoIcon.visibility =
             View.VISIBLE
-        else if (pageData!![position].getString("type") == "group") holder.groupIcon.visibility =
+        else if (item.type == "group") holder.groupIcon.visibility =
             View.VISIBLE
 
-        holder.imageView.setImageDrawable(model.thumbnailCache[pageData!![position].getInt("id")]) // Retrieve any known image from cache
+        holder.imageView.setImageDrawable(model.thumbnailCache[item.id]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            if (pageData!![position].getString("type") in arrayOf("image", "video")) {
+            if (item.type in arrayOf("image", "video")) {
                 activity.startActivity(Intent(activity, PreviewActivity::class.java).apply {
-                    putExtra(PREVIEW_ITEM_EXTRA_ID, Item.fromJson(pageData!![position]))
+                    putExtra(PREVIEW_ITEM_EXTRA_ID, item)
                 })
             }
             // TODO extract this into a callback
@@ -87,13 +88,12 @@ class ThumbnailAdapter (
 
         if (holder.imageView.drawable == null) {
             holder.call = APIClient.requestImage(
-                    pageData!![position].getString("thumbnail"),
+                    APIClient.address + item.thumbURL!!,
             success = { _, image ->
                 activity.runOnUiThread {
                     try {
                         holder.imageView.setImageBitmap(image)
                         // TODO cache thumbnail
-//                        pageData!![position].getInt("id")
                     } catch (e: ImageDecoder.DecodeException) {
                         holder.imageView.setImageDrawable(null)
                         e.printStackTrace()

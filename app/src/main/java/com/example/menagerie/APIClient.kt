@@ -22,6 +22,11 @@ object APIClient {
 
     var address: String? = null
         set(value) {
+            if (value != field) {
+                itemCache.clear()
+                tagCache.clear()
+            }
+
             if (!value.isNullOrEmpty()) {
                 var addr = if (!value.startsWith("http://")) {
                     "http://$value"
@@ -38,6 +43,7 @@ object APIClient {
         }
 
     val tagCache = HashMap<Int, Tag>()
+    val itemCache = HashMap<Int, Item>()
 
 
     fun isAddressValid(address: String?): Boolean {
@@ -52,7 +58,7 @@ object APIClient {
         page: Int = 0,
         descending: Boolean = true,
         ungroup: Boolean = false,
-        success: ((code: Int, data: List<JSONObject>) -> Unit)? = null,
+        success: ((data: List<Item>, total: Int) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ) {
         var url = "$address/search?page=$page&terms=" + URLEncoder.encode(terms, "UTF-8")
@@ -66,27 +72,25 @@ object APIClient {
                         if (it.isSuccessful) {
                             val root = JSONObject(response.body!!.string())
                             val count = root.getInt("count")
-                            val data = ArrayList<JSONObject>()
+                            val data = ArrayList<Item>()
 
                             if (count > 0) {
                                 val items = root.getJSONArray("items")
+                                // Iterate all result items
                                 for (i in 0 until count) {
-                                    val item: JSONObject = items[i] as JSONObject
+                                    val json: JSONObject = items[i] as JSONObject
 
-                                    item.put(
-                                        "thumbnail",
-                                        address + item.getString("thumbnail")
+                                    // Get item from cache, or build it from json
+                                    data.add(
+                                        itemCache.getOrPut(
+                                            json.getInt("id"),
+                                            defaultValue = { Item.fromJson(json) })
+                                            .updateFromJSON(json)
                                     )
-                                    if (item.has("file")) item.put(
-                                        "file",
-                                        address + item.getString("file")
-                                    )
-
-                                    data.add(item)
                                 }
                             }
 
-                            success?.invoke(it.code, data)
+                            success?.invoke(data, root.getInt("total"))
                         } else {
                             failure?.invoke(null)
                         }
@@ -147,7 +151,7 @@ object APIClient {
 
         var filename: String? = null
         if (uri.scheme == "content") {
-            contentResolver.query(uri, null, null, null, null)!!.use {c ->
+            contentResolver.query(uri, null, null, null, null)!!.use { c ->
                 if (c.moveToFirst()) {
                     filename = c.getString(c.getColumnIndex(OpenableColumns.DISPLAY_NAME))
                 }

@@ -19,6 +19,8 @@ class SettingsActivity : AppCompatActivity() {
 
         setSupportActionBar(findViewById(R.id.settingsToolbar))
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+
+        // TODO support Menagerie key
     }
 
     override fun onSupportNavigateUp(): Boolean {
