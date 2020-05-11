@@ -27,6 +27,15 @@
             app:summaryOff="No authentication required to open Menagerie" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="Paging">
+        <SwitchPreferenceCompat
+            app:key="preload-pages"
+            app:title="Preload pages"
+            app:defaultValue="true"
+            app:summaryOn="Preloads search pages before you navigate to them"
+            app:summaryOff="Only loads a search page when it is navigated to" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="Cache">
         <SeekBarPreference
             app:key="cache-size"

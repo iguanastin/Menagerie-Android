@@ -4,10 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.RelativeLayout
 import android.widget.TextView
-import androidx.core.view.setMargins
-import androidx.core.view.setPadding
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
@@ -23,7 +20,7 @@ class ItemInfoDialogFragment(val item: Item) : BottomSheetDialogFragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val layout = inflater.inflate(R.layout.layout_item_info_fragment, container, false)
+        val layout = inflater.inflate(R.layout.fragment_item_info_dialog, container, false)
 
         val recycler: RecyclerView = layout.findViewById(R.id.itemInfoRecyclerView)
         recycler.adapter = ItemInfoAdapter(item)
@@ -64,7 +61,7 @@ private class ItemInfoAdapter(item: Item) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemInfoRecyclerHolder {
         return ItemInfoRecyclerHolder(
             LayoutInflater.from(parent.context)
-                .inflate(R.layout.view_item_info, parent, false) as TextView
+                .inflate(R.layout.layout_item_info, parent, false) as TextView
         )
     }
 

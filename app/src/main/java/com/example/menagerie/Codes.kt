@@ -10,6 +10,9 @@ enum class Codes {
     search_activity_result_tags_list_search_tag
 }
 
+const val DEFAULT_CACHE_SIZE: Int = 128
+const val PREFERRED_THUMBNAIL_SIZE_DP: Int = 125
+
 const val UNKNOWN_SEARCH_TOTAL = -1
 const val UNKNOWN_PAGE_SIZE = -1
 const val UNKNOWN_PAGE_COUNT = -1

@@ -1,36 +1,24 @@
 package com.example.menagerie
 
-import android.content.Intent
 import android.graphics.ImageDecoder
+import android.os.Handler
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.marginLeft
 import androidx.core.view.marginRight
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.RecyclerView
 import okhttp3.Call
-import org.json.JSONObject
-import kotlin.collections.ArrayList
 
-class ThumbnailAdapter (
-    private val activity: AppCompatActivity,
-    private val model: SearchViewModel,
-    private val span: Int
-) :
+
+class ThumbnailAdapter(private val span: Int) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
-    private var pageData: List<Item>? = null
-
-    init {
-        model.pageData.observe(activity, Observer { data ->
-            pageData = ArrayList(data)
-            notifyDataSetChanged()
-        })
-    }
+    private val handler: Handler = Handler(Looper.getMainLooper())
+    var pageData: List<Item>? = null
 
     class ViewHolder(view: ConstraintLayout) : RecyclerView.ViewHolder(view) {
         var call: Call? = null
@@ -76,33 +64,33 @@ class ThumbnailAdapter (
         else if (item.type == "group") holder.groupIcon.visibility =
             View.VISIBLE
 
-        holder.imageView.setImageDrawable(model.thumbnailCache[item.id]) // Retrieve any known image from cache
         holder.imageView.setOnClickListener {
-            if (item.type in arrayOf("image", "video")) {
-                activity.startActivityForResult(Intent(activity, PreviewActivity::class.java).apply {
-                    putExtra(PREVIEW_ITEM_EXTRA_ID, item)
-                    putExtra(PREVIEW_SEARCH_EXTRA_ID, model.search.value)
-                    putExtra(PREVIEW_PAGE_EXTRA_ID, model.page.value)
-                    putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, position)
-                }, Codes.preview_activity_result_search_tag.ordinal)
-            }
+//            if (item.type in arrayOf("image", "video")) {
+//                activity.startActivityForResult(Intent(activity, PreviewActivity::class.java).apply {
+//                    putExtra(PREVIEW_ITEM_EXTRA_ID, item)
+//                    putExtra(PREVIEW_SEARCH_EXTRA_ID, model.search.value)
+//                    putExtra(PREVIEW_PAGE_EXTRA_ID, model.page.value)
+//                    putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, position)
+//                }, Codes.preview_activity_result_search_tag.ordinal)
+//            }
             // TODO extract this into a callback
         }
 
+        // TODO get cached thumbnail? Okhttp might be a better caching mechanism than something I make
         if (holder.imageView.drawable == null) {
             holder.call = APIClient.requestImage(
-                    APIClient.address + item.thumbURL!!,
-            success = { _, image ->
-                activity.runOnUiThread {
-                    try {
-                        holder.imageView.setImageBitmap(image)
-                        // TODO cache thumbnail
-                    } catch (e: ImageDecoder.DecodeException) {
-                        holder.imageView.setImageDrawable(null)
-                        e.printStackTrace()
+                APIClient.address + item.thumbURL!!,
+                success = { _, image ->
+                    handler.post {
+                        try {
+                            holder.imageView.setImageBitmap(image)
+                            // TODO cache thumbnail
+                        } catch (e: ImageDecoder.DecodeException) {
+                            holder.imageView.setImageDrawable(null)
+                            e.printStackTrace()
+                        }
                     }
-                }
-            })
+                })
         }
     }
 

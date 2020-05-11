@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/pageSwipeRefresh"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/pageRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            tools:layoutManager="GridLayoutManager"
+            tools:itemCount="10"
+            tools:spanCount="3" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/pageToTopButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:focusable="true"
+        android:visibility="gone"
+        app:backgroundTint="#ff666666"
+        app:layout_constraintBottom_toBottomOf="@+id/pageSwipeRefresh"
+        app:layout_constraintEnd_toEndOf="@+id/pageSwipeRefresh"
+        app:srcCompat="@android:drawable/arrow_up_float" />
+
+    <ImageView
+        android:id="@+id/pageErrorIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="@string/cd_error_icon"
+        app:layout_constraintBottom_toTopOf="@+id/pageErrorText"
+        app:layout_constraintEnd_toEndOf="@+id/pageSwipeRefresh"
+        app:layout_constraintStart_toStartOf="@+id/pageSwipeRefresh"
+        app:layout_constraintTop_toTopOf="@+id/pageSwipeRefresh"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:srcCompat="@android:drawable/stat_notify_error" />
+
+    <TextView
+        android:id="@+id/pageErrorText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        tools:text="Failed to connect"
+        app:layout_constraintBottom_toBottomOf="@+id/pageSwipeRefresh"
+        app:layout_constraintEnd_toEndOf="@+id/pageSwipeRefresh"
+        app:layout_constraintStart_toStartOf="@+id/pageSwipeRefresh"
+        app:layout_constraintTop_toBottomOf="@+id/pageErrorIcon" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -21,7 +21,7 @@ class TagsDialogFragment(val item: Item, val onClick: ((tag: Tag) -> Unit)? = nu
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.layout_tags_fragment, container, false)
+        val view = inflater.inflate(R.layout.fragment_tags_dialog, container, false)
 
         val submit = view.findViewById<ImageButton>(R.id.tagsFragmentSendButton)
         val textEdit = view.findViewById<AutoCompleteTextView>(R.id.tagsFragmentTextEdit)

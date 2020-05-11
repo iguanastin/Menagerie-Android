@@ -31,10 +31,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import okio.IOException
 
 
-const val DEFAULT_CACHE_SIZE: Int = 128
-const val PREFERRED_THUMBNAIL_SIZE_DP: Int = 125
-
-
 class SearchActivity : AppCompatActivity() {
 
     private lateinit var grid: RecyclerView
@@ -50,7 +46,7 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var preferences: SharedPreferences
     private lateinit var prefsListener: (SharedPreferences, String) -> Unit
 
-    private var thumbnailAdapter: ThumbnailAdapter? = null
+    private lateinit var thumbnailAdapter: ThumbnailAdapter
 
 
     /**
@@ -271,9 +267,6 @@ class SearchActivity : AppCompatActivity() {
 
         swipeRefresher.setOnRefreshListener { search(model.search.value!!, model.page.value!!) }
 
-        gridErrorText.gravity = Gravity.CENTER
-        gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
-
         showGridStatus()
 
         initializeListeners()
@@ -353,7 +346,12 @@ class SearchActivity : AppCompatActivity() {
 
         grid.onGlobalLayout {
             val span = grid.width / dpToPixels(PREFERRED_THUMBNAIL_SIZE_DP)
-            thumbnailAdapter = ThumbnailAdapter(this@SearchActivity, model, span)
+            thumbnailAdapter = ThumbnailAdapter(span)
+
+            model.pageData.observe(this, Observer { data ->
+                thumbnailAdapter.pageData = ArrayList(data)
+                thumbnailAdapter.notifyDataSetChanged()
+            })
 
             grid.apply {
                 layoutManager = GridLayoutManager(context, span)
