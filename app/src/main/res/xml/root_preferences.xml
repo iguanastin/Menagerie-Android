@@ -18,13 +18,19 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="Authentication">
+    <PreferenceCategory app:title="Security">
         <SwitchPreferenceCompat
             app:key="lock-app"
             app:title="Lock app"
             app:defaultValue="false"
             app:summaryOn="Require biometric or pattern/code to open Menagerie"
             app:summaryOff="No authentication required to open Menagerie" />
+        <SwitchPreferenceCompat
+            app:key="disable-recents-thumbnail"
+            app:title="Hide content"
+            app:defaultValue="false"
+            app:summaryOn="App content will not be visible from the Recent Apps screen"
+            app:summaryOff="App content is visible in the Recent Apps screen" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="Paging">

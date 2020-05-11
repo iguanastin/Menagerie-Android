@@ -12,10 +12,7 @@ import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.view.KeyEvent
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import android.widget.MultiAutoCompleteTextView.Tokenizer
@@ -81,6 +78,18 @@ class SearchActivity : AppCompatActivity() {
                 )
             }
         }
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        if (preferences.getBoolean("disable-recents-thumbnail", false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     private fun handleLockAndStart() {
@@ -522,8 +531,7 @@ class SearchActivity : AppCompatActivity() {
             }
         }
 
-        builder.setView(spinner).setNegativeButton("Cancel", listener)
-            .setPositiveButton("Go", listener).create().show()
+        builder.setView(spinner).setPositiveButton("Go", listener).create().show()
     }
 
     override fun onBackPressed() {
