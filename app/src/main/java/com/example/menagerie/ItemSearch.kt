@@ -10,7 +10,7 @@ class ItemSearch(val terms: String = "", val descending: Boolean = true, val ung
         private set
     var pageSize: Int = UNKNOWN_PAGE_SIZE
         private set
-    var pages: Int = UNKNOWN_PAGE_COUNT
+    var pages: Int = 1
         private set
 
 

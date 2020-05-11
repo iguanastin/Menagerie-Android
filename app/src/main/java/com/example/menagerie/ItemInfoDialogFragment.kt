@@ -52,6 +52,7 @@ private class ItemInfoAdapter(item: Item) :
         if (item.filePath != null) data.add("Path: ${item.filePath}")
         if (item.md5 != null) data.add("MD5: ${item.md5}")
         if (item.elements != null) data.add("Elements: ${item.elements.size}")
+        if (item.elementOf != null && item.elementIndex != null) data.add("Element of: ${item.elementOf}\nIndex: ${item.elementIndex}")
         // TODO filesize
         // TODO image resolution
     }

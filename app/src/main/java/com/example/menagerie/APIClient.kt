@@ -212,7 +212,7 @@ object APIClient {
                             failure?.invoke(null)
                         } else {
                             try {
-                                success?.invoke(it.code, BitmapFactory.decodeStream(bytes))
+                                success?.invoke(it.code, BitmapFactory.decodeStream(bytes, null, BitmapFactory.Options())!!) // TODO scale/sample images if they're too large
                             } catch (e: ImageDecoder.DecodeException) {
                                 failure?.invoke(e)
                             }

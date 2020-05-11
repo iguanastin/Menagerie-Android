@@ -43,69 +43,15 @@
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent" />
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/searchSwipeRefresh"
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/searchViewPager"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
         android:layout_marginBottom="8dp"
         app:layout_constraintBottom_toTopOf="@+id/searchText"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/searchToolbar">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/grid"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
-            tools:itemCount="10"
-            tools:layoutManager="GridLayoutManager"
-            tools:spanCount="3" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/toTopButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:focusable="true"
-        android:onClick="toTopOfGrid"
-        android:visibility="gone"
-        app:backgroundTint="#ff444444"
-        app:layout_constraintBottom_toBottomOf="@+id/searchSwipeRefresh"
-        app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
-        app:srcCompat="@android:drawable/arrow_up_float" />
-
-    <ImageView
-        android:id="@+id/gridErrorIcon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="@string/cd_error_icon"
-        app:layout_constraintBottom_toTopOf="@+id/gridErrorText"
-        app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
-        app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh"
-        app:layout_constraintTop_toTopOf="@+id/searchSwipeRefresh"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:srcCompat="@android:drawable/stat_notify_error" />
-
-    <TextView
-        android:id="@+id/gridErrorText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:text="Failed to connect"
-        app:layout_constraintBottom_toBottomOf="@+id/searchSwipeRefresh"
-        app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
-        app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh"
-        app:layout_constraintTop_toBottomOf="@+id/gridErrorIcon" />
+        app:layout_constraintTop_toBottomOf="@+id/searchToolbar" />
 
     <TextView
         android:id="@+id/pageIndexTextView"
@@ -113,11 +59,11 @@
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
         android:background="@drawable/background_round_rect_32dp"
-        android:padding="12dp"
         android:onClick="choosePageIndex"
-        app:layout_constraintBottom_toBottomOf="@+id/searchSwipeRefresh"
-        app:layout_constraintEnd_toEndOf="@+id/searchSwipeRefresh"
-        app:layout_constraintStart_toStartOf="@+id/searchSwipeRefresh"
+        android:padding="12dp"
+        app:layout_constraintBottom_toBottomOf="@+id/searchViewPager"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/searchViewPager"
         tools:text="0/0" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

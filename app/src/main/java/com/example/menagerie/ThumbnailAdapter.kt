@@ -14,7 +14,10 @@ import androidx.recyclerview.widget.RecyclerView
 import okhttp3.Call
 
 
-class ThumbnailAdapter(private val span: Int) :
+class ThumbnailAdapter(
+    private val span: Int,
+    private val onItemClick: ((item: Item, position: Int) -> Unit)? = null
+) :
     RecyclerView.Adapter<ThumbnailAdapter.ViewHolder>() {
 
     private val handler: Handler = Handler(Looper.getMainLooper())
@@ -32,8 +35,8 @@ class ThumbnailAdapter(private val span: Int) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.layout_thumbnail, parent, false) as ConstraintLayout
-        val margin: Int = view.marginLeft + view.marginRight
 
+        val margin: Int = view.marginLeft + view.marginRight
         val size: Int = parent.width / span - margin
         view.layoutParams.width = size
         view.layoutParams.height = size
@@ -41,6 +44,12 @@ class ThumbnailAdapter(private val span: Int) :
         val holder = ViewHolder(view)
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
+
+        if (onItemClick != null) {
+            view.setOnClickListener {
+                onItemClick.invoke(pageData!![holder.layoutPosition], holder.layoutPosition)
+            }
+        }
 
         return holder
     }
@@ -64,34 +73,23 @@ class ThumbnailAdapter(private val span: Int) :
         else if (item.type == "group") holder.groupIcon.visibility =
             View.VISIBLE
 
-        holder.imageView.setOnClickListener {
-//            if (item.type in arrayOf("image", "video")) {
-//                activity.startActivityForResult(Intent(activity, PreviewActivity::class.java).apply {
-//                    putExtra(PREVIEW_ITEM_EXTRA_ID, item)
-//                    putExtra(PREVIEW_SEARCH_EXTRA_ID, model.search.value)
-//                    putExtra(PREVIEW_PAGE_EXTRA_ID, model.page.value)
-//                    putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, position)
-//                }, Codes.preview_activity_result_search_tag.ordinal)
-//            }
-            // TODO extract this into a callback
-        }
-
         // TODO get cached thumbnail? Okhttp might be a better caching mechanism than something I make
-        if (holder.imageView.drawable == null) {
-            holder.call = APIClient.requestImage(
-                APIClient.address + item.thumbURL!!,
-                success = { _, image ->
-                    handler.post {
-                        try {
-                            holder.imageView.setImageBitmap(image)
-                            // TODO cache thumbnail
-                        } catch (e: ImageDecoder.DecodeException) {
-                            holder.imageView.setImageDrawable(null)
-                            e.printStackTrace()
-                        }
+//        if (holder.imageView.drawable == null) {
+        holder.imageView.setImageDrawable(null)
+        holder.call = APIClient.requestImage(
+            APIClient.address + item.thumbURL!!,
+            success = { _, image ->
+                handler.post {
+                    try {
+                        holder.imageView.setImageBitmap(image)
+                        // TODO cache thumbnail
+                    } catch (e: ImageDecoder.DecodeException) {
+                        holder.imageView.setImageDrawable(null)
+                        e.printStackTrace()
                     }
-                })
-        }
+                }
+            })
+//        }
     }
 
     override fun getItemCount(): Int = if (pageData == null) 0 else pageData!!.size

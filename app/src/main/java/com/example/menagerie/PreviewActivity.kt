@@ -11,14 +11,9 @@ import android.os.Environment
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageView
-import android.widget.MediaController
-import android.widget.TextView
-import android.widget.VideoView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import okio.Okio
-import okio.Source
-import okio.source
+import androidx.lifecycle.Observer
 import java.io.File
 import java.io.IOException
 
@@ -27,6 +22,7 @@ class PreviewActivity : AppCompatActivity() {
 
     private lateinit var imagePreview: ImageView
     private lateinit var videoPreview: VideoView
+    private lateinit var groupPreview: FrameLayout
     private lateinit var indexTextView: TextView
 
     private var item: Item? = null
@@ -53,6 +49,7 @@ class PreviewActivity : AppCompatActivity() {
 
         imagePreview = findViewById(R.id.previewImageView)
         videoPreview = findViewById(R.id.previewVideoView)
+        groupPreview = findViewById(R.id.previewGroupFrame)
         indexTextView = findViewById(R.id.previewIndexTextView)
 
         indexTextView.text = "0/0"
@@ -73,12 +70,13 @@ class PreviewActivity : AppCompatActivity() {
 
         when (item!!.type) {
             Item.IMAGE_TYPE -> {
-                displyImageType(APIClient.address + item!!.fileURL!!)
+                displayImageType(APIClient.address + item!!.fileURL!!)
             }
             Item.VIDEO_TYPE -> {
                 displayVideoType(Uri.parse(item!!.fileURL!!))
             }
             Item.GROUP_TYPE -> {
+                displayGroupType(item!!)
                 // TODO display some group thumbnails and title
                 // TODO allow user to open group
             }
@@ -90,6 +88,7 @@ class PreviewActivity : AppCompatActivity() {
 
     private fun displayVideoType(uri: Uri?) {
         imagePreview.visibility = View.GONE
+        groupPreview.visibility = View.GONE
         videoPreview.visibility = View.VISIBLE
 
         val mediaController = MediaController(this)
@@ -110,25 +109,12 @@ class PreviewActivity : AppCompatActivity() {
         videoPreview.requestFocus()
     }
 
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putInt("Position", videoPreview.currentPosition)
-        videoPreview.pause()
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        videoPosition = savedInstanceState.getInt("Position")
-        videoPreview.seekTo(videoPosition)
-    }
-
-    private fun displyImageType(url: String) {
+    private fun displayImageType(url: String) {
         imagePreview.visibility = View.VISIBLE
+        groupPreview.visibility = View.GONE
         videoPreview.visibility = View.GONE
         APIClient.requestImage(url, success = { _, image ->
-            runOnUiThread {
-                imagePreview.setImageBitmap(image)
-            }
+            runOnUiThread { imagePreview.setImageBitmap(image) }
         }, failure = { e: IOException? ->
             e?.printStackTrace()
             simpleAlert(
@@ -140,6 +126,66 @@ class PreviewActivity : AppCompatActivity() {
                 finish()
             }
         })
+    }
+
+    private fun displayGroupType(item: Item) {
+        groupPreview.visibility = View.VISIBLE
+        imagePreview.visibility = View.GONE
+        videoPreview.visibility = View.GONE
+
+        val ft = supportFragmentManager.beginTransaction()
+        val fragment = SearchPageFragment(
+            ItemSearch(terms = "in:${item.id}", ungroup = true),
+            page = 0,
+            onItemClick = { subItem, position ->
+                startActivityForResult(
+                    Intent(this@PreviewActivity, PreviewActivity::class.java).apply {
+                        putExtra(PREVIEW_ITEM_EXTRA_ID, subItem)
+                        putExtra(PREVIEW_SEARCH_EXTRA_ID, search)
+                        putExtra(PREVIEW_PAGE_EXTRA_ID, page)
+                        putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, position)
+                    }, Codes.preview_activity_result_search_tag.ordinal
+                )
+            })
+        ft.replace(R.id.previewGroupFrame, fragment, "preview-group-page-fragment")
+        ft.commit()
+
+        fragment.items.observe(this, Observer { list ->
+            list.sortBy { item ->
+                item.elementIndex
+            }
+        })
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        when (requestCode) {
+            Codes.preview_activity_result_search_tag.ordinal -> {
+                if (data != null && data.hasExtra(TAG_NAME_EXTRA_ID)) {
+                    setResult(RESULT_OK, Intent().apply {
+                        putExtra(
+                            TAG_NAME_EXTRA_ID, data.getStringExtra(
+                                TAG_NAME_EXTRA_ID
+                            )
+                        )
+                    })
+                    finish()
+                }
+            }
+        }
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt("Position", videoPreview.currentPosition)
+        videoPreview.pause()
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        videoPosition = savedInstanceState.getInt("Position")
+        videoPreview.seekTo(videoPosition)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -163,7 +209,10 @@ class PreviewActivity : AppCompatActivity() {
         return when (item?.itemId) {
             R.id.toolbar_download -> {
                 requirePermissions(
-                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE),
+                    arrayOf(
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    ),
                     "Storage permissions required",
                     "In order to download files, this app must be granted permission to read/write external storage",
                     Codes.preview_request_storage_perms_for_download.ordinal

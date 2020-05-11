@@ -15,7 +15,9 @@ class Item(
     val fileURL: String? = null,
     var title: String? = null,
     val elements: List<Int>? = null,
-    val thumbURL: String? = null
+    val thumbURL: String? = null,
+    var elementOf: Int? = null,
+    var elementIndex: Int? = null
 ) : Parcelable {
 
 
@@ -63,6 +65,9 @@ class Item(
 
             val thumbURL = if (json.has("thumbnail")) json.getString("thumbnail") else null
 
+            val elementOf = if (json.has("element_of")) json.getInt("element_of") else null
+            val elementIndex = if (json.has("element_index")) json.getInt("element_index") else null
+
             return Item(
                 id,
                 type,
@@ -73,7 +78,9 @@ class Item(
                 fileURL = fileURL,
                 title = title,
                 elements = elements,
-                thumbURL = thumbURL
+                thumbURL = thumbURL,
+                elementOf = elementOf,
+                elementIndex = elementIndex
             )
         }
     }
@@ -88,8 +95,13 @@ class Item(
         parcel.readString(),
         parcel.readString(),
         parcel.createIntArray()?.toList(),
-        parcel.readString()
-    )
+        parcel.readString(),
+        parcel.readInt(),
+        parcel.readInt()
+    ) {
+        if (elementOf != null && elementOf!! < 0) elementOf = null
+        if (elementIndex != null && elementIndex!! < 0) elementIndex = null
+    }
 
     fun updateFromJSON(json: JSONObject): Item {
         if (json.has("path")) filePath = json.getString("path")
@@ -117,6 +129,8 @@ class Item(
         parcel.writeString(title)
         parcel.writeIntArray(elements?.toIntArray())
         parcel.writeString(thumbURL)
+        parcel.writeInt(elementOf ?: -1)
+        parcel.writeInt(elementIndex ?: -1)
     }
 
     override fun describeContents(): Int {

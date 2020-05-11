@@ -10,11 +10,12 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.inputmethodservice.Keyboard
 import android.net.Uri
 import android.os.Bundle
-import android.util.TypedValue
-import android.view.*
+import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.*
 import android.widget.MultiAutoCompleteTextView.Tokenizer
@@ -22,31 +23,26 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import okio.IOException
 
 
 class SearchActivity : AppCompatActivity() {
 
-    private lateinit var grid: RecyclerView
-    private lateinit var gridErrorText: TextView
-    private lateinit var gridErrorIcon: ImageView
     private lateinit var searchText: MultiAutoCompleteTextView
     private lateinit var searchButton: Button
-    private lateinit var swipeRefresher: SwipeRefreshLayout
     private lateinit var pageIndexText: TextView
+    private lateinit var pager: ViewPager2
 
     private lateinit var model: SearchViewModel
 
     private lateinit var preferences: SharedPreferences
     private lateinit var prefsListener: (SharedPreferences, String) -> Unit
-
-    private lateinit var thumbnailAdapter: ThumbnailAdapter
 
 
     /**
@@ -101,12 +97,12 @@ class SearchActivity : AppCompatActivity() {
                     promptKeyguardAuth(km)
                 } else {
                     simpleAlert(this, message = "No pass code or pattern is set") {
-                        search(ItemSearch())
+                        initialSearch()
                     }
                 }
             }
         } else {
-            search(ItemSearch())
+            initialSearch()
         }
     }
 
@@ -147,7 +143,7 @@ class SearchActivity : AppCompatActivity() {
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                search(ItemSearch())
+                initialSearch()
             }
         }
 
@@ -167,10 +163,9 @@ class SearchActivity : AppCompatActivity() {
         failure: ((e: IOException?) -> Unit)? = null
     ) {
         hideKeyboard(searchText)
-        grid.scrollToPosition(0)
 
         if (APIClient.isAddressValid(APIClient.address)) {
-            showGridStatus(progress = true)
+//            showGridStatus(progress = true)
 
             APIClient.requestTags(success = { _, tags ->
                 APIClient.tagCache.clear()
@@ -192,10 +187,10 @@ class SearchActivity : AppCompatActivity() {
                     runOnUiThread {
                         model.pageData.value = emptyList()
 
-                        showGridStatus(
-                            error = true,
-                            errorMessage = "Failed to connect to:\n${APIClient.address}"
-                        )
+//                        showGridStatus(
+//                            error = true,
+//                            errorMessage = "Failed to connect to:\n${APIClient.address}"
+//                        )
                     }
 
                     failure?.invoke(e)
@@ -205,14 +200,14 @@ class SearchActivity : AppCompatActivity() {
                 runOnUiThread {
                     model.pageData.value = emptyList()
 
-                    showGridStatus(
-                        error = true,
-                        errorMessage = "Failed to connect to:\n${APIClient.address}"
-                    )
+//                    showGridStatus(
+//                        error = true,
+//                        errorMessage = "Failed to connect to:\n${APIClient.address}"
+//                    )
                 }
             })
         } else {
-            showGridStatus(error = true, errorMessage = "Invalid address:\n${APIClient.address}")
+//            showGridStatus(error = true, errorMessage = "Invalid address:\n${APIClient.address}")
         }
     }
 
@@ -255,47 +250,46 @@ class SearchActivity : AppCompatActivity() {
      * Initializes the views for this activity
      */
     private fun initializeViews() {
-        grid = findViewById(R.id.grid)
-        gridErrorText = findViewById(R.id.gridErrorText)
-        searchText = findViewById(R.id.searchText)
-        searchButton = findViewById(R.id.searchButton)
-        gridErrorIcon = findViewById(R.id.gridErrorIcon)
-        swipeRefresher = findViewById(R.id.searchSwipeRefresh)
-        pageIndexText = findViewById(R.id.pageIndexTextView)
-
         setSupportActionBar(findViewById(R.id.searchToolbar))
 
-        swipeRefresher.setOnRefreshListener { search(model.search.value!!, model.page.value!!) }
+        searchText = findViewById(R.id.searchText)
+        searchButton = findViewById(R.id.searchButton)
+        pageIndexText = findViewById(R.id.pageIndexTextView)
+        pager = findViewById(R.id.searchViewPager)
 
-        showGridStatus()
+        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            @SuppressLint("SetTextI18n")
+            override fun onPageSelected(position: Int) {
+                pageIndexText.text = (position + 1).toString() + "/" + model.search.value!!.pages
+                model.page.value = position
+            }
+        })
+        pager.adapter = object : FragmentStateAdapter(supportFragmentManager, lifecycle) {
+            override fun getItemCount(): Int = model.search.value?.pages ?: 0
+
+            override fun createFragment(position: Int): Fragment =
+                SearchPageFragment(model.search.value!!, position) { item, index ->
+                    startActivityForResult(
+                        Intent(this@SearchActivity, PreviewActivity::class.java).apply {
+                            putExtra(PREVIEW_ITEM_EXTRA_ID, item)
+                            putExtra(PREVIEW_SEARCH_EXTRA_ID, model.search.value)
+                            putExtra(PREVIEW_PAGE_EXTRA_ID, model.page.value)
+                            putExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, index)
+                        }, Codes.preview_activity_result_search_tag.ordinal
+                    )
+                }
+        }
+        model.search.observe(this, Observer {
+            pager.adapter = pager.adapter
+        })
 
         initializeListeners()
-    }
-
-    private fun showGridStatus(
-        progress: Boolean = false,
-        error: Boolean = false,
-        errorMessage: String? = null
-    ) {
-        swipeRefresher.isRefreshing = progress
-
-        gridErrorText.visibility = if (error) View.VISIBLE else View.GONE
-        gridErrorIcon.visibility = if (error) View.VISIBLE else View.GONE
-        if (error && errorMessage != null) gridErrorText.text = errorMessage
     }
 
     /**
      * Initializes the listeners for this activity
      */
     private fun initializeListeners() {
-        // Hide or show toTopButton based on scroll position
-        grid.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                findViewById<View>(R.id.toTopButton).visibility =
-                    if ((recyclerView.layoutManager as GridLayoutManager).findFirstVisibleItemPosition() > 0) View.VISIBLE else View.GONE
-            }
-        })
-
         searchText.setOnEditorActionListener { _, actionId, key ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH || key.keyCode == KeyEvent.KEYCODE_ENTER) {
                 searchButton.performClick()
@@ -343,21 +337,6 @@ class SearchActivity : AppCompatActivity() {
                 }
             }
         })
-
-        grid.onGlobalLayout {
-            val span = grid.width / dpToPixels(PREFERRED_THUMBNAIL_SIZE_DP)
-            thumbnailAdapter = ThumbnailAdapter(span)
-
-            model.pageData.observe(this, Observer { data ->
-                thumbnailAdapter.pageData = ArrayList(data)
-                thumbnailAdapter.notifyDataSetChanged()
-            })
-
-            grid.apply {
-                layoutManager = GridLayoutManager(context, span)
-                adapter = thumbnailAdapter
-            }
-        }
     }
 
     /**
@@ -416,15 +395,14 @@ class SearchActivity : AppCompatActivity() {
                 if (APIClient.isAddressValid(address)) {
                     APIClient.address = address
 
-                    search(ItemSearch())
+                    initialSearch()
                 } else {
-                    model.pageData.value = ArrayList()
-                    showGridStatus(error = true, errorMessage = "Invalid address:\n$address")
+                    model.pageData.value = emptyList()
                 }
             }
             Codes.search_activity_result_authenticate.ordinal -> {
                 if (resultCode == RESULT_OK) {
-                    search(ItemSearch())
+                    initialSearch()
                 } else {
                     simpleAlert(this, message = "Unable to authenticate") {
                         finish()
@@ -443,6 +421,10 @@ class SearchActivity : AppCompatActivity() {
                 println("Unexpected requestCode: $requestCode")
             }
         }
+    }
+
+    private fun initialSearch() {
+        search(ItemSearch())
     }
 
     private fun uploadContent(uri: Uri) {
@@ -509,14 +491,8 @@ class SearchActivity : AppCompatActivity() {
     fun submitSearch(view: View) {
         // Push previous search and state onto stack
         model.searchStack.push(
-            SearchState(
-                model.search.value!!,
-                model.page.value!!,
-                (grid.layoutManager as GridLayoutManager).findLastCompletelyVisibleItemPosition()
-            )
+            SearchState(model.search.value!!, model.page.value!!)
         )
-
-        grid.requestFocus()
 
         // TODO descending, ungroup
         search(ItemSearch(searchText.text.toString()))
@@ -528,17 +504,6 @@ class SearchActivity : AppCompatActivity() {
         model.page.value = page
 
         pageIndexText.text = "${page + 1}/$totalPages"
-        showGridStatus(progress = false, error = false)
-    }
-
-    /**
-     * Scrolls the grid to the top
-     */
-    fun toTopOfGrid(@Suppress("UNUSED_PARAMETER") view: View) {
-        if ((grid.layoutManager as GridLayoutManager).findLastVisibleItemPosition() < 100)
-            grid.smoothScrollToPosition(0)
-        else
-            grid.scrollToPosition(0)
     }
 
     fun choosePageIndex(@Suppress("UNUSED_PARAMETER") view: View) {
@@ -553,7 +518,7 @@ class SearchActivity : AppCompatActivity() {
         val listener = DialogInterface.OnClickListener { _, which ->
             if (which == AlertDialog.BUTTON_POSITIVE) {
                 val page = (spinner.value - 1).coerceIn(0, model.search.value!!.pages - 1)
-                search(model.search.value!!, page)
+                pager.setCurrentItem(page, true)
             }
         }
 
@@ -563,15 +528,17 @@ class SearchActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         if (model.searchStack.empty()) {
-            super.onBackPressed()
+            if (model.page.value != 0) {
+                pager.setCurrentItem(0, true)
+            } else {
+                super.onBackPressed()
+            }
         } else {
             val state: SearchState = model.searchStack.pop()
             searchText.setText(state.search.terms)
             searchText.setSelection(searchText.text.length)
 
-            search(state.search, state.page, success = {
-                runOnUiThread { grid.scrollToPosition(state.lastVisiblePosition) }
-            })
+            search(state.search, state.page)
         }
     }
 

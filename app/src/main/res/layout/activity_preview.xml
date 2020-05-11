@@ -38,6 +38,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/previewToolbar" />
 
+    <FrameLayout
+        android:id="@+id/previewGroupFrame"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/previewToolbar" />
+
     <ImageButton
         android:id="@+id/previewTagButton"
         android:layout_width="wrap_content"
