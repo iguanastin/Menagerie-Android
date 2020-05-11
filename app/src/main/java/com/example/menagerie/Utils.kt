@@ -181,17 +181,6 @@ fun hideKeyboard(v: View) {
     )
 }
 
-fun EditText.onSubmit(func: () -> Unit) {
-    setOnEditorActionListener { v, actionId, _ ->
-        if (actionId == EditorInfo.IME_ACTION_DONE) {
-            hideKeyboard(v)
-            func()
-        }
-
-        true
-    }
-}
-
 fun View.onGlobalLayout(func: () -> Unit) {
     viewTreeObserver.addOnGlobalLayoutListener(object :
         ViewTreeObserver.OnGlobalLayoutListener {

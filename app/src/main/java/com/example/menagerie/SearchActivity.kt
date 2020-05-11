@@ -10,13 +10,12 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.inputmethodservice.Keyboard
 import android.net.Uri
 import android.os.Bundle
 import android.util.TypedValue
-import android.view.Gravity
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
+import android.view.inputmethod.EditorInfo
 import android.widget.*
 import android.widget.MultiAutoCompleteTextView.Tokenizer
 import androidx.appcompat.app.AppCompatActivity
@@ -82,11 +81,13 @@ class SearchActivity : AppCompatActivity() {
         if (model.pageData.value == null) {
             handleLockAndStart()
         } else {
-            displaySearchResults(
-                model.pageData.value!!,
-                model.page.value!!,
-                model.search.value!!.pages
-            )
+            runOnUiThread {
+                applySearchResults(
+                    model.pageData.value!!,
+                    model.page.value!!,
+                    model.search.value!!.pages
+                )
+            }
         }
     }
 
@@ -169,9 +170,6 @@ class SearchActivity : AppCompatActivity() {
         success: (() -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ) {
-        model.pageData.value = emptyList()
-        model.page.value = page
-        model.search.value = search
         hideKeyboard(searchText)
         grid.scrollToPosition(0)
 
@@ -186,12 +184,18 @@ class SearchActivity : AppCompatActivity() {
                 model.tagData.postValue(tags)
 
                 search.request(page, success = { search, items ->
-                    displaySearchResults(items, page, search.pages)
+                    runOnUiThread {
+                        model.search.value = search
+
+                        applySearchResults(items, page, search.pages)
+                    }
 
                     success?.invoke()
                 }, failure = { _, e ->
                     e?.printStackTrace()
                     runOnUiThread {
+                        model.pageData.value = emptyList()
+
                         showGridStatus(
                             error = true,
                             errorMessage = "Failed to connect to:\n${APIClient.address}"
@@ -203,6 +207,8 @@ class SearchActivity : AppCompatActivity() {
             }, failure = { e ->
                 e?.printStackTrace()
                 runOnUiThread {
+                    model.pageData.value = emptyList()
+
                     showGridStatus(
                         error = true,
                         errorMessage = "Failed to connect to:\n${APIClient.address}"
@@ -263,7 +269,7 @@ class SearchActivity : AppCompatActivity() {
 
         setSupportActionBar(findViewById(R.id.searchToolbar))
 
-        swipeRefresher.setOnRefreshListener { searchButton.performClick() }
+        swipeRefresher.setOnRefreshListener { search(model.search.value!!, model.page.value!!) }
 
         gridErrorText.gravity = Gravity.CENTER
         gridErrorText.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24f)
@@ -297,8 +303,12 @@ class SearchActivity : AppCompatActivity() {
             }
         })
 
-        searchText.onSubmit {
-            searchButton.performClick()
+        searchText.setOnEditorActionListener { _, actionId, key ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH || key.keyCode == KeyEvent.KEYCODE_ENTER) {
+                searchButton.performClick()
+            }
+
+            true
         }
         searchText.setTokenizer(object : Tokenizer {
             override fun findTokenEnd(text: CharSequence, cursor: Int): Int {
@@ -319,7 +329,6 @@ class SearchActivity : AppCompatActivity() {
 
             override fun terminateToken(text: CharSequence): CharSequence {
                 return if (text.endsWith(' ')) text else ("$text ")
-//                return text
             }
 
         })
@@ -509,18 +518,19 @@ class SearchActivity : AppCompatActivity() {
             )
         )
 
+        grid.requestFocus()
+
         // TODO descending, ungroup
         search(ItemSearch(searchText.text.toString()))
     }
 
     @SuppressLint("SetTextI18n")
-    private fun displaySearchResults(newData: List<Item>, page: Int, totalPages: Int) {
-        runOnUiThread {
-            model.pageData.value = newData
+    private fun applySearchResults(newData: List<Item>, page: Int, totalPages: Int) {
+        model.pageData.value = newData
+        model.page.value = page
 
-            pageIndexText.text = "${page + 1}/$totalPages"
-            showGridStatus(progress = false, error = false)
-        }
+        pageIndexText.text = "${page + 1}/$totalPages"
+        showGridStatus(progress = false, error = false)
     }
 
     /**
@@ -562,9 +572,7 @@ class SearchActivity : AppCompatActivity() {
             searchText.setSelection(searchText.text.length)
 
             search(state.search, state.page, success = {
-                runOnUiThread {
-                    grid.scrollToPosition(state.lastVisiblePosition)
-                }
+                runOnUiThread { grid.scrollToPosition(state.lastVisiblePosition) }
             })
         }
     }
