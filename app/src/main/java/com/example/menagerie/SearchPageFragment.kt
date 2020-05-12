@@ -46,7 +46,7 @@ class SearchPageFragment(
         swipeRefresher = view.findViewById(R.id.pageSwipeRefresh)
 
         swipeRefresher.setOnRefreshListener {
-            // TODO refresh the page contents
+            requestPage()
         }
         initializeRecyclerView()
         initializeToTopButton(view)
@@ -127,8 +127,6 @@ class SearchPageFragment(
 
         search.request(page, success = { _, items ->
             showStatus()
-
-            println(items)
 
             this.items.postValue(ArrayList(items))
         }, failure = { _, e ->
