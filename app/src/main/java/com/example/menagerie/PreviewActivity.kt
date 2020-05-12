@@ -255,7 +255,7 @@ class PreviewActivity : AppCompatActivity() {
         val filename = item!!.filePath!!.substringAfterLast("/").substringAfterLast("\\")
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-        APIClient.requestFile(item!!.fileURL!!, File(dir, filename), success = { _, file ->
+        APIClient.requestFile(APIClient.address + item!!.fileURL!!, File(dir, filename), success = { _, file ->
             MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), null, null)
 
             runOnUiThread {
