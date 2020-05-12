@@ -12,9 +12,9 @@ import androidx.recyclerview.widget.RecyclerView
 class TagRecyclerAdapter(
     tags: List<Tag>,
     sort: Sort = Sort.Name,
+    private val allowSelecting: Boolean = false,
     private val onRemoveTag: ((Tag) -> Unit)? = null,
-    private val onClick: ((Tag) -> Unit)? = null,
-    private val onLongClick: ((Tag) -> Unit)? = null
+    private val onClick: ((Tag) -> Unit)? = null
 ) :
     RecyclerView.Adapter<TagRecyclerAdapter.TagRecyclerHolder>() {
 
@@ -26,6 +26,17 @@ class TagRecyclerAdapter(
         Color,
         Frequency,
     }
+
+    private val selection: MutableList<Int> = mutableListOf()
+    var selecting: Boolean = false
+        set(value) {
+            if (!value) {
+                selection.clear()
+                notifyDataSetChanged()
+            }
+
+            field = value
+        }
 
     val tags: MutableList<Tag> = ArrayList(tags).apply {
         when (sort) {
@@ -55,13 +66,36 @@ class TagRecyclerAdapter(
             }
 
             if (adapter.onClick != null) view.setOnClickListener {
-                adapter.onClick.invoke(tag!!)
+                if (adapter.selecting) {
+                    if (adapter.selection.contains(layoutPosition)) {
+                        adapter.selection.remove(layoutPosition)
+                        view.styleSelected(false)
+
+                        if (adapter.selection.isEmpty()) {
+                            adapter.selecting = false
+                        }
+                    } else {
+                        adapter.selection.add(layoutPosition)
+                        view.styleSelected(true)
+                    }
+                } else {
+                    adapter.onClick.invoke(tag!!)
+                }
             }
-            if (adapter.onLongClick != null) view.setOnLongClickListener {
-                adapter.onLongClick.invoke(tag!!)
+
+            view.setOnLongClickListener {
+                if (adapter.allowSelecting) {
+                    adapter.selecting = !adapter.selecting
+                    if (adapter.selecting) {
+                        adapter.selection.add(layoutPosition)
+                        view.styleSelected(true)
+                    }
+                }
+
                 true
             }
         }
+
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TagRecyclerHolder {
@@ -78,6 +112,8 @@ class TagRecyclerAdapter(
         val color = holder.tag!!.color
 
         holder.freqView.text = holder.tag!!.frequency.toString()
+
+        holder.itemView.styleSelected(selection.contains(position))
 
         holder.nameView.setTextColor(Color.WHITE)
         if (!color.isNullOrEmpty()) {

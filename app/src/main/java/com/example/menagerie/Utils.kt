@@ -3,7 +3,9 @@ package com.example.menagerie
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.content.res.Resources
+import android.graphics.Color
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
@@ -271,4 +273,10 @@ fun Activity.dpToPixels(pixels: Int): Int {
 
 fun dpToPixels(resources: Resources, pixels: Int): Int {
     return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, pixels.toFloat(), resources.displayMetrics).toInt()
+}
+
+fun View.styleSelected(selected: Boolean) {
+    scaleX = if (selected) 0.95f else 1f
+    scaleY = if (selected) 0.95f else 1f
+    backgroundTintList = if (selected) ColorStateList.valueOf(Color.parseColor("#8888AA")) else null
 }
