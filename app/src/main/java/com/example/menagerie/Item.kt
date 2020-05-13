@@ -14,7 +14,7 @@ class Item(
     var filePath: String? = null,
     val fileURL: String? = null,
     var title: String? = null,
-    val elements: List<Int>? = null,
+    var elements: MutableList<Int>? = null,
     val thumbURL: String? = null,
     var elementOf: Int? = null,
     var elementIndex: Int? = null
@@ -44,7 +44,7 @@ class Item(
             val tags = ArrayList<Tag>()
             for (i in 0 until tagarr.length()) {
                 val d = tagarr.getInt(i)
-                tags.add(APIClient.tagCache.getOrElse(d) { Tag(d, "unknown") })
+                tags.add(APIClient.tagCache.getOrElse(d) { Tag(d, "unknown") }) // TODO retrieve tag list from API when unknown tag is encountered
             }
             tags.sortBy { tag -> tag.name }
 
@@ -94,7 +94,7 @@ class Item(
         parcel.readString(),
         parcel.readString(),
         parcel.readString(),
-        parcel.createIntArray()?.toList(),
+        parcel.createIntArray()?.toMutableList(),
         parcel.readString(),
         parcel.readInt(),
         parcel.readInt()
@@ -107,6 +107,24 @@ class Item(
         if (json.has("path")) filePath = json.getString("path")
         if (json.has("title")) title = json.getString("title")
 
+        val tagArr = json.getJSONArray("tags")
+        tags.clear()
+        for (i in 0 until tagArr.length()) {
+            val d = tagArr.getInt(i)
+            tags.add(APIClient.tagCache.getOrElse(d) { Tag(d, "unknown") })
+        }
+        tags.sortBy { tag -> tag.name }
+
+        if (json.has("elements")) {
+            elements?.clear()
+            if (elements == null) elements = mutableListOf()
+
+            val elemArr = json.getJSONArray("elements")
+            for (i in 0 until elemArr.length()) {
+                elements!!.add(elemArr.getInt(i))
+            }
+        }
+
         return this
     }
 
@@ -116,6 +134,10 @@ class Item(
 
     override fun hashCode(): Int {
         return Integer.hashCode(id)
+    }
+
+    override fun toString(): String {
+        return "Item[$id: $type]"
     }
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {

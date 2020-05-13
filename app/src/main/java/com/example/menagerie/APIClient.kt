@@ -264,4 +264,37 @@ object APIClient {
         return call
     }
 
+    fun requestEditTags(
+        item: Item,
+        editString: String,
+        success: ((code: Int, item: Item) -> Unit)? = null,
+        failure: ((e: IOException?) -> Unit)? = null
+    ): Call? {
+        val uri = address + "/edit_item/" + item.id + "?tags=" + URLEncoder.encode(editString, "UTF-8")
+
+        val call = ClientManager.client!!.newCall(Request.Builder().url(uri).build())
+
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                failure?.invoke(e)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (it.isSuccessful) {
+                        val root = JSONObject(response.body!!.string())
+
+                        item.updateFromJSON(root)
+
+                        success?.invoke(it.code, item)
+                    } else {
+                        failure?.invoke(null)
+                    }
+                }
+            }
+        })
+
+        return call
+    }
+
 }

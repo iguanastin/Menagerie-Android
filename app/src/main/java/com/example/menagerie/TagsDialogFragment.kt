@@ -1,6 +1,8 @@
 package com.example.menagerie
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputFilter
 import android.text.Spanned
 import android.view.LayoutInflater
@@ -9,15 +11,17 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.AutoCompleteTextView
 import android.widget.ImageButton
+import android.widget.Toast
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 
 class TagsDialogFragment(
     val item: Item,
-    private val onClick: ((tag: Tag) -> Unit)? = null,
-    private val onRemove: ((tag: Tag) -> Unit)? = null
+    private val onClick: ((tag: Tag) -> Unit)? = null
 ) : BottomSheetDialogFragment() {
+
+    private val handler: Handler = Handler(Looper.getMainLooper())
 
 
     override fun onCreateView(
@@ -32,6 +36,17 @@ class TagsDialogFragment(
         val recycler = view.findViewById<RecyclerView>(R.id.tagsFragmentRecyclerView)
 
         submit.setOnClickListener {
+            APIClient.requestEditTags(item, textEdit.text.toString(), success = { _, _ ->
+                (recycler.adapter as TagRecyclerAdapter).tags.clear()
+                (recycler.adapter as TagRecyclerAdapter).tags.addAll(item.tags)
+                handler.post { recycler.adapter?.notifyDataSetChanged() }
+            }, failure = { e ->
+                e?.printStackTrace()
+                handler.post {
+                    Toast.makeText(context, "Failed to edit tags", Toast.LENGTH_SHORT).show()
+                }
+            })
+
             textEdit.text = null
         }
 
@@ -49,7 +64,17 @@ class TagsDialogFragment(
         }
 
         recycler.adapter = TagRecyclerAdapter(item.tags, onRemoveTag = { tag ->
-            onRemove?.invoke(tag)
+            APIClient.requestEditTags(item, "-" + tag.name, success = { _, _ ->
+                (recycler.adapter as TagRecyclerAdapter).tags.clear()
+                (recycler.adapter as TagRecyclerAdapter).tags.addAll(item.tags)
+                handler.post { recycler.adapter?.notifyDataSetChanged() }
+            }, failure = { e ->
+                e?.printStackTrace()
+                handler.post {
+                    Toast.makeText(context, "Failed to remove tag: ${tag.name}", Toast.LENGTH_SHORT)
+                        .show()
+                }
+            })
         }, onClick = { tag ->
             onClick?.invoke(tag)
         })

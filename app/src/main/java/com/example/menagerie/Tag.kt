@@ -52,6 +52,10 @@ class Tag(
         return Integer.hashCode(id)
     }
 
+    override fun toString(): String {
+        return "Tag[$id: $name]"
+    }
+
     override fun writeToParcel(parcel: Parcel, flags: Int) {
         parcel.writeInt(id)
         parcel.writeString(name)
