@@ -443,10 +443,10 @@ class SearchActivity : AppCompatActivity() {
             uri, contentResolver,
             success = {
                 // TODO Track import status?
-                simpleAlert(this, message = "Successfully uploaded file")
+                runOnUiThread { simpleAlert(this, message = "Successfully uploaded file") }
             },
             failure = {
-                simpleAlert(this, "Failed to upload", "Unable to connect", "Ok") {}
+                runOnUiThread { simpleAlert(this, "Failed to upload", "Unable to connect") }
             })
     }
 

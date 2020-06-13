@@ -57,7 +57,12 @@ class SearchPageFragment(
     override fun onStart() {
         super.onStart()
 
-        requestPage()
+        val cached = search.pageCache[page]
+        if (cached == null) {
+            requestPage()
+        } else {
+            items.postValue(ArrayList(cached))
+        }
     }
 
     private fun initializeRecyclerView() {

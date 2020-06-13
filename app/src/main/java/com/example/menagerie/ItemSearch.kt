@@ -3,6 +3,7 @@ package com.example.menagerie
 import android.os.Parcel
 import android.os.Parcelable
 import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 class ItemSearch(val terms: String = "", val descending: Boolean = true, val ungroup: Boolean = false): Parcelable {
 
@@ -12,6 +13,8 @@ class ItemSearch(val terms: String = "", val descending: Boolean = true, val ung
         private set
     var pages: Int = 1
         private set
+
+    val pageCache: ConcurrentHashMap<Int, List<Item>> = ConcurrentHashMap()
 
 
     constructor(parcel: Parcel) : this(
@@ -29,6 +32,8 @@ class ItemSearch(val terms: String = "", val descending: Boolean = true, val ung
             this.total = total
             this.pageSize = pageSize
             this.pages = pages
+
+            pageCache[page] = ArrayList(data)
             success?.invoke(this, data)
         }, failure = { e ->
             failure?.invoke(this, e)

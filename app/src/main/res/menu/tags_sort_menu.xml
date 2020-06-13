@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:title="Alphabetical"
+        android:id="@+id/tags_sort_by_alphabet"/>
+
+    <item
+        android:title="Frequency"
+        android:id="@+id/tags_sort_by_frequency"/>
+
+    <item
+        android:title="Color"
+        android:id="@+id/tags_sort_by_color"/>
+
+    <item
+        android:title="ID"
+        android:id="@+id/tags_sort_by_id"/>
+
+</menu>

@@ -23,9 +23,9 @@
         android:id="@+id/tags_recycler_view"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
         android:scrollbars="vertical"
         app:fastScrollEnabled="true"
@@ -33,9 +33,59 @@
         app:fastScrollHorizontalTrackDrawable="@drawable/scrollbar_line_drawable"
         app:fastScrollVerticalThumbDrawable="@drawable/scrollbar_thumb_drawable"
         app:fastScrollVerticalTrackDrawable="@drawable/scrollbar_line_drawable"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/tags_search_text"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tags_toolbar" />
+
+    <EditText
+        android:id="@+id/tags_search_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="16dp"
+        android:ems="10"
+        android:hint="Filter"
+        android:imeOptions="actionSearch"
+        android:inputType="textPersonName"
+        android:selectAllOnFocus="true"
+        android:singleLine="true"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/tags_search_button"
+        app:layout_constraintStart_toEndOf="@+id/tags_order_button" />
+
+    <ImageButton
+        android:id="@+id/tags_sort_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:onClick="sortClicked"
+        app:layout_constraintBottom_toBottomOf="@+id/tags_search_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/tags_search_text"
+        app:srcCompat="@drawable/ic_sort_white_24dp" />
+
+    <ImageButton
+        android:id="@+id/tags_search_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:onClick="searchClicked"
+        app:layout_constraintBottom_toBottomOf="@+id/tags_search_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/tags_search_text"
+        app:srcCompat="@drawable/ic_search_white_24dp" />
+
+    <ImageButton
+        android:id="@+id/tags_order_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:onClick="orderClicked"
+        app:layout_constraintBottom_toBottomOf="@+id/tags_search_text"
+        app:layout_constraintStart_toEndOf="@+id/tags_sort_button"
+        app:layout_constraintTop_toTopOf="@+id/tags_search_text"
+        app:srcCompat="@drawable/ic_import_export_white_24dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
