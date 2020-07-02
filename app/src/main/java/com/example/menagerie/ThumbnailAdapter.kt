@@ -30,7 +30,7 @@ class ThumbnailAdapter(
         val imageView: ImageView = view.findViewById(R.id.thumbnailImageView)
         val groupIcon: ImageView = view.findViewById(R.id.groupIconView)
         val videoIcon: ImageView = view.findViewById(R.id.videoIconView)
-        val textView: TextView = view.findViewById(R.id.titleTextView)
+        val titleView: TextView = view.findViewById(R.id.titleTextView)
     }
 
 
@@ -46,7 +46,7 @@ class ThumbnailAdapter(
         val holder = ViewHolder(view)
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
-        holder.textView.apply {
+        holder.titleView.apply {
             isSelected = true
             visibility = View.GONE
         }
@@ -74,11 +74,12 @@ class ThumbnailAdapter(
         val item = pageData!![position]
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
+        holder.titleView.visibility = View.GONE
         if (item.type == "video") holder.videoIcon.visibility =
             View.VISIBLE
         else if (item.type == "group") {
             holder.groupIcon.visibility = View.VISIBLE
-            holder.textView.apply {
+            holder.titleView.apply {
                 visibility = View.VISIBLE
                 text = item.title
             }
