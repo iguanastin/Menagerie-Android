@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.marginLeft
 import androidx.core.view.marginRight
@@ -29,6 +30,7 @@ class ThumbnailAdapter(
         val imageView: ImageView = view.findViewById(R.id.thumbnailImageView)
         val groupIcon: ImageView = view.findViewById(R.id.groupIconView)
         val videoIcon: ImageView = view.findViewById(R.id.videoIconView)
+        val textView: TextView = view.findViewById(R.id.titleTextView)
     }
 
 
@@ -44,6 +46,10 @@ class ThumbnailAdapter(
         val holder = ViewHolder(view)
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
+        holder.textView.apply {
+            isSelected = true
+            visibility = View.GONE
+        }
 
         if (onItemClick != null) {
             view.setOnClickListener {
@@ -70,8 +76,13 @@ class ThumbnailAdapter(
         holder.groupIcon.visibility = View.GONE
         if (item.type == "video") holder.videoIcon.visibility =
             View.VISIBLE
-        else if (item.type == "group") holder.groupIcon.visibility =
-            View.VISIBLE
+        else if (item.type == "group") {
+            holder.groupIcon.visibility = View.VISIBLE
+            holder.textView.apply {
+                visibility = View.VISIBLE
+                text = item.title
+            }
+        }
 
         // TODO get cached thumbnail? Okhttp might be a better caching mechanism than something I make
 //        if (holder.imageView.drawable == null) {
