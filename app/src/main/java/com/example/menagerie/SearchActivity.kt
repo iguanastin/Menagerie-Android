@@ -174,8 +174,6 @@ class SearchActivity : AppCompatActivity() {
         hideKeyboard(searchText)
 
         if (APIClient.isAddressValid(APIClient.address)) {
-//            showGridStatus(progress = true)
-
             APIClient.requestTags(success = { _, tags ->
                 APIClient.tagCache.clear()
                 for (tag in tags) {
@@ -433,7 +431,9 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun initialSearch() {
-        search(ItemSearch())
+        search(ItemSearch(), failure = {
+            runOnUiThread { simpleAlert(this, message = it?.localizedMessage) }
+        })
     }
 
     private fun uploadContent(uri: Uri) {
@@ -499,7 +499,7 @@ class SearchActivity : AppCompatActivity() {
     @Suppress("UNUSED_PARAMETER")
     fun submitSearch(view: View) {
         // Push previous search and state onto stack
-        model.searchStack.push(
+        if (model.search.value != null && model.page.value != null) model.searchStack.push(
             SearchState(model.search.value!!, model.page.value!!)
         )
 

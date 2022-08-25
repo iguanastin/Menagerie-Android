@@ -223,8 +223,8 @@ fun byteSizeToString(size: Long): String? {
 
 fun simpleAlert(
     context: Context,
-    title: String = "Alert",
-    message: String,
+    title: String? = "Alert",
+    message: String?,
     button: String = "Ok",
     onDismiss: (() -> Unit)? = null
 ) {

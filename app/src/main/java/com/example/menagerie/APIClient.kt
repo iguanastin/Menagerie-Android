@@ -212,7 +212,12 @@ object APIClient {
                             failure?.invoke(null)
                         } else {
                             try {
-                                success?.invoke(it.code, BitmapFactory.decodeStream(bytes, null, BitmapFactory.Options())!!) // TODO scale/sample images if they're too large
+                                val bmp = BitmapFactory.decodeStream(bytes, null, BitmapFactory.Options())
+                                if (bmp != null) {
+                                    success?.invoke(it.code, bmp) // TODO scale/sample images if they're too large
+                                } else {
+                                    failure?.invoke(null)
+                                }
                             } catch (e: ImageDecoder.DecodeException) {
                                 failure?.invoke(e)
                             }

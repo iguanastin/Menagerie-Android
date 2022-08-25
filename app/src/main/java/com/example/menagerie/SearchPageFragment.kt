@@ -111,7 +111,7 @@ class SearchPageFragment(
             recycler.scrollToPosition(0)
     }
 
-    private fun showStatus(
+    private fun updateStatus(
         progress: Boolean = false,
         errorMessage: String? = null
     ) {
@@ -128,14 +128,14 @@ class SearchPageFragment(
     }
 
     private fun requestPage() {
-        showStatus(progress = true)
+        updateStatus(progress = true)
 
         search.request(page, success = { _, items ->
-            showStatus()
+            updateStatus()
 
             this.items.postValue(ArrayList(items))
         }, failure = { _, e ->
-            showStatus(errorMessage = "Failed to connect\n${APIClient.address}")
+            updateStatus(errorMessage = "Failed to connect\n${APIClient.address}")
             e?.printStackTrace()
         })
     }
