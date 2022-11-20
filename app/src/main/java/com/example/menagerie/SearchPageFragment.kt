@@ -115,15 +115,17 @@ class SearchPageFragment(
         progress: Boolean = false,
         errorMessage: String? = null
     ) {
-        swipeRefresher.isRefreshing = progress
+        activity?.runOnUiThread {
+            swipeRefresher.isRefreshing = progress
 
-        if (errorMessage != null) {
-            errorText.visibility = View.VISIBLE
-            errorIcon.visibility = View.VISIBLE
-            errorText.text = errorMessage
-        } else {
-            errorText.visibility = View.GONE
-            errorIcon.visibility = View.GONE
+            if (errorMessage != null) {
+                errorText.visibility = View.VISIBLE
+                errorIcon.visibility = View.VISIBLE
+                errorText.text = errorMessage
+            } else {
+                errorText.visibility = View.GONE
+                errorIcon.visibility = View.GONE
+            }
         }
     }
 

@@ -73,7 +73,7 @@ class PreviewActivity : AppCompatActivity() {
                 displayImageType(APIClient.address + item!!.fileURL!!)
             }
             Item.VIDEO_TYPE -> {
-                displayVideoType(Uri.parse(item!!.fileURL!!))
+                displayVideoType(Uri.parse(APIClient.address + item!!.fileURL!!))
             }
             Item.GROUP_TYPE -> {
                 displayGroupType(item!!)
@@ -105,6 +105,7 @@ class PreviewActivity : AppCompatActivity() {
             }
         }
 
+        // TODO API server can't stream video
         videoPreview.setVideoURI(uri)
         videoPreview.requestFocus()
     }

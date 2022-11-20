@@ -27,6 +27,8 @@ import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import okio.IOException
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 
 class SearchActivity : AppCompatActivity() {
@@ -83,7 +85,9 @@ class SearchActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
 
-        if (preferences.getBoolean("disable-recents-thumbnail", false)) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (preferences.getBoolean("disable-recents-thumbnail", false)) window.addFlags(
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
     }
 
     override fun onResume() {
@@ -367,11 +371,11 @@ class SearchActivity : AppCompatActivity() {
      * Prompts the user for a file to upload
      */
     private fun userPickFileForUpload() {
-        var chooseFile = Intent(Intent.ACTION_GET_CONTENT)
+        val chooseFile = Intent(Intent.ACTION_GET_CONTENT)
         chooseFile.type = "*/*"
-        chooseFile = Intent.createChooser(chooseFile, "Choose a file")
+        chooseFile.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         startActivityForResult(
-            chooseFile,
+            Intent.createChooser(chooseFile, "Choose a file"),
             Codes.search_activity_result_pick_file_for_upload.ordinal
         )
     }
@@ -389,8 +393,48 @@ class SearchActivity : AppCompatActivity() {
         when (requestCode) {
             Codes.search_activity_result_pick_file_for_upload.ordinal -> {
                 if (resultCode == Activity.RESULT_OK) {
-                    if (data != null) {
-                        uploadContent(data.data!!)
+                    if (data?.clipData != null) {
+                        val clip = data.clipData!!
+                        val count = clip.itemCount
+
+                        var numFailed = 0
+                        var numSucceeded = 0
+
+                        for (i in 0 until count) {
+                            val latch = CountDownLatch(1)
+                            uploadContent(clip.getItemAt(i).uri,
+                                success = {
+                                    numSucceeded++
+                                    latch.countDown()
+                                },
+                                failure = {
+                                    numFailed++
+                                    latch.countDown()
+                                })
+                            latch.await()
+                        }
+
+                        runOnUiThread { simpleAlert(this, message = "Uploaded $numSucceeded, failed $numFailed") }
+                    } else if (data != null) {
+                        uploadContent(
+                            data.data!!,
+                            success = {
+                                runOnUiThread {
+                                    simpleAlert(
+                                        this,
+                                        message = "Successfully uploaded file"
+                                    )
+                                }
+                            },
+                            failure = {
+                                runOnUiThread {
+                                    simpleAlert(
+                                        this,
+                                        "Failed to upload",
+                                        "Unable to connect"
+                                    )
+                                }
+                            })
                     }
                 }
             }
@@ -436,18 +480,19 @@ class SearchActivity : AppCompatActivity() {
         })
     }
 
-    private fun uploadContent(uri: Uri) {
+    private fun uploadContent(
+        uri: Uri,
+        success: ((Int) -> Unit)? = null,
+        failure: ((e: IOException?) -> Unit)? = null
+    ) {
+        // TODO Track import status?
         // TODO make upload progress
 
         APIClient.importContent(
             uri, contentResolver,
-            success = {
-                // TODO Track import status?
-                runOnUiThread { simpleAlert(this, message = "Successfully uploaded file") }
-            },
-            failure = {
-                runOnUiThread { simpleAlert(this, "Failed to upload", "Unable to connect") }
-            })
+            success = success,
+            failure = failure
+        )
     }
 
     /**

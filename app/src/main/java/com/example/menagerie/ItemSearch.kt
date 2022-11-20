@@ -11,7 +11,7 @@ class ItemSearch(val terms: String = "", val descending: Boolean = true, val ung
         private set
     var pageSize: Int = UNKNOWN_PAGE_SIZE
         private set
-    var pages: Int = 1
+    var pages: Int = UNKNOWN_PAGE_COUNT
         private set
 
     val pageCache: ConcurrentHashMap<Int, List<Item>> = ConcurrentHashMap()
