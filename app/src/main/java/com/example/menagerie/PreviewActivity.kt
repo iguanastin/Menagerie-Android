@@ -37,8 +37,8 @@ class PreviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preview)
 
-        item = intent.getParcelableExtra(PREVIEW_ITEM_EXTRA_ID)
-        search = intent.getParcelableExtra(PREVIEW_SEARCH_EXTRA_ID)
+        item = intent.getParcelableExtra(PREVIEW_ITEM_EXTRA_ID, Item::class.java)
+        search = intent.getParcelableExtra(PREVIEW_SEARCH_EXTRA_ID, ItemSearch::class.java)
         page = intent.getIntExtra(PREVIEW_PAGE_EXTRA_ID, -1)
         indexInPage = intent.getIntExtra(PREVIEW_INDEX_IN_PAGE_EXTRA_ID, -1)
         if (item == null || search == null || page < 0 || indexInPage < 0) {
@@ -199,6 +199,7 @@ class PreviewActivity : AppCompatActivity() {
         permissions: Array<out String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             Codes.preview_request_storage_perms_for_download.ordinal -> {
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) download()
@@ -206,8 +207,8 @@ class PreviewActivity : AppCompatActivity() {
         }
     }
 
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
             R.id.toolbar_download -> {
                 requirePermissions(
                     arrayOf(

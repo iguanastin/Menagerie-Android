@@ -21,14 +21,12 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.preference.PreferenceManager
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
 import okio.IOException
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 
 class SearchActivity : AppCompatActivity() {
@@ -99,7 +97,7 @@ class SearchActivity : AppCompatActivity() {
     private fun handleLockAndStart() {
         if (preferences.getBoolean("lock-app", false)) {
             if (BiometricManager.from(this)
-                    .canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS
+                    .canAuthenticate(BiometricManager.Authenticators.DEVICE_CREDENTIAL) == BiometricManager.BIOMETRIC_SUCCESS
             ) {
                 promptBiometricAuth()
             } else {
@@ -132,27 +130,27 @@ class SearchActivity : AppCompatActivity() {
 
     private fun promptBiometricAuth() {
         val callback = object : BiometricPrompt.AuthenticationCallback() {
-            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                super.onAuthenticationError(errorCode, errString)
-                simpleAlert(
-                    this@SearchActivity,
-                    title = "Fatal error while authenticating",
-                    message = errString.toString()
-                ) {
-                    finish()
-                }
-            }
-
-            override fun onAuthenticationFailed() {
-                super.onAuthenticationFailed()
-                simpleAlert(
-                    this@SearchActivity,
-                    title = "Error",
-                    message = "Unable to authenticate"
-                ) {
-                    finish()
-                }
-            }
+//            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+//                super.onAuthenticationError(errorCode, errString)
+//                simpleAlert(
+//                    this@SearchActivity,
+//                    title = "Fatal error while authenticating",
+//                    message = errString.toString()
+//                ) {
+//                    finish()
+//                }
+//            }
+//
+//            override fun onAuthenticationFailed() {
+//                super.onAuthenticationFailed()
+//                simpleAlert(
+//                    this@SearchActivity,
+//                    title = "Error",
+//                    message = "Unable to authenticate"
+//                ) {
+//                    finish()
+//                }
+//            }
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
@@ -290,9 +288,9 @@ class SearchActivity : AppCompatActivity() {
                     )
                 }
         }
-        model.search.observe(this, Observer {
+        model.search.observe(this) {
             pager.adapter = pager.adapter
-        })
+        }
 
         initializeListeners()
     }
@@ -330,7 +328,7 @@ class SearchActivity : AppCompatActivity() {
             }
 
         })
-        model.tagData.observe(this, Observer { tags ->
+        model.tagData.observe(this) { tags ->
             if (tags != null) {
                 val tagNames = mutableListOf<String>()
                 tags.sortedByDescending { tag -> tag.frequency }.forEach(action = { tag ->
@@ -347,7 +345,7 @@ class SearchActivity : AppCompatActivity() {
                     )
                 }
             }
-        })
+        }
     }
 
     /**
@@ -358,6 +356,7 @@ class SearchActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
             Codes.search_request_storage_permissions_for_upload.ordinal -> {
                 if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
@@ -454,10 +453,6 @@ class SearchActivity : AppCompatActivity() {
             Codes.search_activity_result_authenticate.ordinal -> {
                 if (resultCode == RESULT_OK) {
                     initialSearch()
-                } else {
-                    simpleAlert(this, message = "Unable to authenticate") {
-                        finish()
-                    }
                 }
             }
             Codes.search_activity_result_tags_list_search_tag.ordinal, Codes.preview_activity_result_search_tag.ordinal -> {
@@ -498,8 +493,8 @@ class SearchActivity : AppCompatActivity() {
     /**
      * Called when a menu option is selected
      */
-    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.itemId) {
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
             R.id.search_toolbar_settings -> {
                 startActivityForResult(
                     Intent(this, SettingsActivity::class.java),
