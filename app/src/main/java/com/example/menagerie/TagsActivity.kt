@@ -150,7 +150,7 @@ class TagsActivity : AppCompatActivity() {
         adapter.notifyDataSetChanged()
     }
 
-    fun orderClicked(view: View) {
+    fun orderClicked(@Suppress("UNUSED_PARAMETER") view: View) {
         descending = !descending
 
         applyFiltering()
@@ -188,7 +188,7 @@ class TagsActivity : AppCompatActivity() {
         applyFiltering()
     }
 
-    fun searchClicked(view: View) {
+    fun searchClicked(@Suppress("UNUSED_PARAMETER") view: View) {
         filter = searchText.text.toString()
 
         applyFiltering()

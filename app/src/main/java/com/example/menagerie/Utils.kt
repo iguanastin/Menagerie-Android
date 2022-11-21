@@ -9,9 +9,7 @@ import android.graphics.Color
 import android.util.TypedValue
 import android.view.View
 import android.view.ViewTreeObserver
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -19,9 +17,10 @@ import java.io.File
 import java.text.DecimalFormat
 import java.util.*
 import kotlin.math.log10
+import kotlin.math.pow
 
 
-private val cssColors = "indianred:#cd5c5c\n" +
+private const val cssColors = "indianred:#cd5c5c\n" +
         "lightcoral:#f08080\n" +
         "salmon:#fa8072\n" +
         "darksalmon:#e9967a\n" +
@@ -198,7 +197,7 @@ fun getDirectorySize(file: File): Long {
     var size: Long = 0
 
     if (file.isDirectory) {
-        for (f in file.listFiles()) {
+        for (f in file.listFiles()!!) {
             size += getDirectorySize(f)
         }
     } else {
@@ -208,16 +207,13 @@ fun getDirectorySize(file: File): Long {
     return size
 }
 
-fun byteSizeToString(size: Long): String? {
+fun byteSizeToString(size: Long): String {
     if (size <= 0) return "0 Bytes"
     val units = arrayOf("Bytes", "kB", "MB", "GB", "TB")
     val digitGroups =
         (log10(size.toDouble()) / log10(1024.0)).toInt()
     return DecimalFormat("#,##0.#").format(
-        size / Math.pow(
-            1024.0,
-            digitGroups.toDouble()
-        )
+        size / 1024.0.pow(digitGroups.toDouble())
     ).toString() + " " + units[digitGroups]
 }
 

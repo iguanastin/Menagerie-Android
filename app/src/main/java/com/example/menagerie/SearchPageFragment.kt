@@ -10,7 +10,6 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -81,7 +80,7 @@ class SearchPageFragment(
             }
         }
 
-        items.observe(viewLifecycleOwner, Observer {
+        items.observe(viewLifecycleOwner) {
             if (recycler.adapter != null) {
                 handler.post {
                     (recycler.adapter as ThumbnailAdapter).apply {
@@ -90,7 +89,7 @@ class SearchPageFragment(
                     }
                 }
             }
-        })
+        }
     }
 
     private fun initializeToTopButton(view: View) {

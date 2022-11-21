@@ -168,6 +168,7 @@ object APIClient {
         val url = "$address/upload?filename=$filename"
 
         val bytes: ByteArray = stream.readBytes() // TODO stream request body instead of copying
+        stream.close()
 
         val call = ClientManager.client!!.newCall(
             Request.Builder()
@@ -196,7 +197,7 @@ object APIClient {
         url: String,
         success: ((code: Int, image: Bitmap) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
-    ): Call? {
+    ): Call {
         val call = ClientManager.client!!.newCall(Request.Builder().url(url).build())
 
         call.enqueue(object : Callback {
@@ -237,7 +238,7 @@ object APIClient {
         saveTo: File,
         success: ((code: Int, file: File) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
-    ): Call? {
+    ): Call {
         val call = ClientManager.client!!.newCall(Request.Builder().url(url).build())
 
         call.enqueue(object : Callback {
@@ -274,7 +275,7 @@ object APIClient {
         editString: String,
         success: ((code: Int, item: Item) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
-    ): Call? {
+    ): Call {
         val uri = address + "/edit_item/" + item.id + "?tags=" + URLEncoder.encode(editString, "UTF-8")
 
         val call = ClientManager.client!!.newCall(Request.Builder().url(uri).build())

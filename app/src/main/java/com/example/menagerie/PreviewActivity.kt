@@ -13,7 +13,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.Observer
 import java.io.File
 import java.io.IOException
 
@@ -77,8 +76,6 @@ class PreviewActivity : AppCompatActivity() {
             }
             Item.GROUP_TYPE -> {
                 displayGroupType(item!!)
-                // TODO display some group thumbnails and title
-                // TODO allow user to open group
             }
             else -> {
                 // TODO display notice and filename of unknown type
@@ -151,11 +148,11 @@ class PreviewActivity : AppCompatActivity() {
         ft.replace(R.id.previewGroupFrame, fragment, "preview-group-page-fragment")
         ft.commit()
 
-        fragment.items.observe(this, Observer { list ->
+        fragment.items.observe(this) { list ->
             list.sortBy { item ->
                 item.elementIndex
             }
-        })
+        }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

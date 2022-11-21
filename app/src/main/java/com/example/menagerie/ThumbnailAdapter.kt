@@ -85,8 +85,6 @@ class ThumbnailAdapter(
             }
         }
 
-        // TODO get cached thumbnail? Okhttp might be a better caching mechanism than something I make
-//        if (holder.imageView.drawable == null) {
         holder.imageView.setImageDrawable(null)
         holder.call = APIClient.requestImage(
             APIClient.address + item.thumbURL!!,
@@ -94,14 +92,12 @@ class ThumbnailAdapter(
                 handler.post {
                     try {
                         holder.imageView.setImageBitmap(image)
-                        // TODO cache thumbnail
                     } catch (e: ImageDecoder.DecodeException) {
                         holder.imageView.setImageDrawable(null)
                         e.printStackTrace()
                     }
                 }
             })
-//        }
     }
 
     override fun getItemCount(): Int = if (pageData == null) 0 else pageData!!.size

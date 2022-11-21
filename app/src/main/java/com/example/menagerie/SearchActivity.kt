@@ -480,7 +480,6 @@ class SearchActivity : AppCompatActivity() {
         success: ((Int) -> Unit)? = null,
         failure: ((e: IOException?) -> Unit)? = null
     ) {
-        // TODO Track import status?
         // TODO make upload progress
 
         APIClient.importContent(
