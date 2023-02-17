@@ -31,6 +31,8 @@ class PreviewActivity : AppCompatActivity() {
 
     private var videoPosition: Int = 0
 
+    private val tempFiles = mutableListOf<File>()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +74,7 @@ class PreviewActivity : AppCompatActivity() {
                 displayImageType(APIClient.address + item!!.fileURL!!)
             }
             Item.VIDEO_TYPE -> {
-                displayVideoType(Uri.parse(APIClient.address + item!!.fileURL!!))
+                displayVideoType(item!!)
             }
             Item.GROUP_TYPE -> {
                 displayGroupType(item!!)
@@ -83,7 +85,7 @@ class PreviewActivity : AppCompatActivity() {
         }
     }
 
-    private fun displayVideoType(uri: Uri?) {
+    private fun displayVideoType(item: Item) {
         imagePreview.visibility = View.GONE
         groupPreview.visibility = View.GONE
         videoPreview.visibility = View.VISIBLE
@@ -103,7 +105,18 @@ class PreviewActivity : AppCompatActivity() {
         }
 
         // TODO API server can't stream video
-        videoPreview.setVideoURI(uri)
+        val file = File.createTempFile(
+            item.id.toString(),
+            item.filePath!!.substringAfterLast("."),
+            applicationContext.cacheDir
+        )
+        file.deleteOnExit()
+        tempFiles.add(file)
+        APIClient.requestFile(APIClient.address + item.fileURL!!, file, success = { _, _ ->
+            runOnUiThread { videoPreview.setVideoPath(file.absolutePath) }
+        }, failure = { e ->
+            throw e!!
+        })
         videoPreview.requestFocus()
     }
 
@@ -254,13 +267,16 @@ class PreviewActivity : AppCompatActivity() {
         val filename = item!!.filePath!!.substringAfterLast("/").substringAfterLast("\\")
         val dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
 
-        APIClient.requestFile(APIClient.address + item!!.fileURL!!, File(dir, filename), success = { _, file ->
-            MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), null, null)
+        APIClient.requestFile(
+            APIClient.address + item!!.fileURL!!,
+            File(dir, filename),
+            success = { _, file ->
+                MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), null, null)
 
-            runOnUiThread {
-                simpleAlert(this, message = "Downloaded file: $filename")
-            }
-        })
+                runOnUiThread {
+                    simpleAlert(this, message = "Downloaded file: $filename")
+                }
+            })
     }
 
     fun tagsButtonClicked(@Suppress("UNUSED_PARAMETER") view: View) {
@@ -277,6 +293,12 @@ class PreviewActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         finish()
         return true
+    }
+
+    override fun onDestroy() {
+        tempFiles.forEach { it.delete() }
+
+        super.onDestroy()
     }
 
 }

@@ -331,7 +331,7 @@ class SearchActivity : AppCompatActivity() {
         model.tagData.observe(this) { tags ->
             if (tags != null) {
                 val tagNames = mutableListOf<String>()
-                tags.sortedByDescending { tag -> tag.frequency }.forEach(action = { tag ->
+                tags.sortedBy { tag -> tag.frequency }.forEach(action = { tag ->
                     tagNames.add(tag.name)
                 })
 
