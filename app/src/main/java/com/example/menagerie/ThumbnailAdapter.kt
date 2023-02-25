@@ -31,6 +31,7 @@ class ThumbnailAdapter(
         val groupIcon: ImageView = view.findViewById(R.id.groupIconView)
         val videoIcon: ImageView = view.findViewById(R.id.videoIconView)
         val titleView: TextView = view.findViewById(R.id.titleTextView)
+        val countView: TextView = view.findViewById(R.id.countTextView)
     }
 
 
@@ -50,8 +51,9 @@ class ThumbnailAdapter(
             isSelected = true
             visibility = View.GONE
         }
+        holder.countView.visibility = View.GONE
 
-        if (onItemClick != null) {
+        onItemClick?.let {
             view.setOnClickListener {
                 onItemClick.invoke(pageData!![holder.layoutPosition], holder.layoutPosition)
             }
@@ -64,7 +66,6 @@ class ThumbnailAdapter(
         holder.call?.cancel() // Cancel old request if possible
 
         if (pageData == null) {
-            // TODO display something useful instead of nothing
             holder.imageView.setImageDrawable(null)
             holder.imageView.setOnClickListener(null)
             holder.imageView.setOnLongClickListener(null)
@@ -75,6 +76,7 @@ class ThumbnailAdapter(
         holder.videoIcon.visibility = View.GONE
         holder.groupIcon.visibility = View.GONE
         holder.titleView.visibility = View.GONE
+        holder.countView.visibility = View.GONE
         if (item.type == "video") holder.videoIcon.visibility =
             View.VISIBLE
         else if (item.type == "group") {
@@ -82,6 +84,10 @@ class ThumbnailAdapter(
             holder.titleView.apply {
                 visibility = View.VISIBLE
                 text = item.title
+            }
+            holder.countView.apply {
+                visibility = View.VISIBLE
+                text = item.elements?.size?.toString() ?: "[ERROR]"
             }
         }
 
