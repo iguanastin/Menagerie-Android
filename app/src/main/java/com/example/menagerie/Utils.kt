@@ -241,7 +241,7 @@ fun Activity.requirePermissions(
         if (ContextCompat.checkSelfPermission(this, perm) != PackageManager.PERMISSION_GRANTED) {
             needed.add(perm)
 
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this, perm)) {
+            if (shouldShowRequestPermissionRationale(perm)) {
                 showRationale = true
             }
         }
@@ -249,10 +249,12 @@ fun Activity.requirePermissions(
     if (needed.isNotEmpty()) {
         if (showRationale) {
             simpleAlert(this, title = justificationTitle, message = justificationMessage) {
-                ActivityCompat.requestPermissions(this, permissions, permissionGrantId)
+//                ActivityCompat.requestPermissions(this, permissions, permissionGrantId)
+                requestPermissions(permissions, permissionGrantId)
             }
         } else {
-            ActivityCompat.requestPermissions(this, needed.toTypedArray(), permissionGrantId)
+//            ActivityCompat.requestPermissions(this, needed.toTypedArray(), permissionGrantId)
+            requestPermissions(needed.toTypedArray(), permissionGrantId)
         }
     } else {
         success()
